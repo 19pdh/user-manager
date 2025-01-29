@@ -1,7 +1,7 @@
-import { ADMIN_MAIL } from "./config";
-import { labelToColumnLetter, getField, getSheet } from "./lib/sheet";
-import { getUser, getGoogleUser, deleteUser } from "./lib/user";
-import { sendEmail } from "./lib/utils";
+import { ADMIN_MAIL } from "../config";
+import { labelToColumnLetter, getField, getSheet } from "../lib/sheet";
+import { getUser, getGoogleUser, deleteUser } from "../lib/user";
+import { sendEmail } from "../lib/utils";
 
 function getFeedback(mail: string): void {
   if (!AdminDirectory.Users) {
@@ -87,7 +87,7 @@ function getFreshUsers(
  * Cleanup of stale accounts that haven't been activated
  * @param {AdminDirectory.Schema.User} user User fetched with Google API
  */
-function freshCleanup(): void {
+export function freshCleanup(): void {
   const sheet = getSheet();
   const users = getFreshUsers(sheet);
   let msg = "Usunięto użytkowników:\n\n";

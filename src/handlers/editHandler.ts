@@ -1,20 +1,24 @@
-import { getSheet, updateRow, getRow } from "./lib/sheet";
-import { createUser } from "./lib/user";
-import { sendEmail } from "./lib/utils";
+import { getSheet, updateRow, getRow } from "../lib/sheet";
+import { createUser } from "../lib/user";
+import { sendEmail } from "../lib/utils";
 import {
   MANAGER_MAIL,
   NONLEADERS_GROUP,
   LEADERS_GROUP,
   UNIT_GROUP,
   ADMIN_MAIL,
-} from "./config";
+} from "../config";
 
 interface Range {
   columnStart: number;
   rowStart: number;
 }
 
-function onEdit({ user, value, range }: GoogleAppsScript.Events.SheetsOnEdit) {
+export function onEdit({
+  user,
+  value,
+  range,
+}: GoogleAppsScript.Events.SheetsOnEdit) {
   if (value != "Zatwierdzono") {
     return;
   }
