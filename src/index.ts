@@ -1,8 +1,4 @@
-const greeter = (person: string) => {
-  return `Hello, ${person}!`;
-};
+import { onFormSubmit } from "./handlers/formHandler";
+import { doGet } from "./handlers/httpHandler";
 
-function testGreeter() {
-  const user = "Grant";
-  Logger.log(greeter(user));
-}
+export { onFormSubmit, doGet };
