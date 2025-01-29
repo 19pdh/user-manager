@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rollup --config"
+    "build": "source ./.env && rollup --config"
   },
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
     "@types/google-apps-script": "^1.0.91",
     "@types/node": "^12.19.9",
     "rollup": "^2.35.1",
+    "rollup-plugin-dotenv": "^0.5.1",
     "typescript": "^4.1.3"
   }
 }

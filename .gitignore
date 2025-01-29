@@ -2,3 +2,4 @@
 utils/sheets.json
 build
 node_modules
+.env

@@ -1,3 +1,4 @@
+import dotenv from "rollup-plugin-dotenv";
 import { babel } from "@rollup/plugin-babel";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 
@@ -29,5 +30,6 @@ export default {
       mainFields: ["jsnext:main", "main"],
     }),
     babel({ extensions, babelHelpers: "runtime" }),
+    dotenv(),
   ],
 };
