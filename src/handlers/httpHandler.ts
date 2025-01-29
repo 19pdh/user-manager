@@ -1,11 +1,11 @@
 import { getSheet, updateRow } from "../lib/sheet";
-import { User, getUser, getGoogleUser } from "../lib/user";
+import { getUser, getGoogleUser } from "../lib/user";
 import { sendEmail } from "../lib/utils";
 import { ADMIN_MAIL, MANAGER_MAIL, LEADERS_GROUP } from "../config";
 
 function acceptUser(
   sheet: GoogleAppsScript.Spreadsheet.Sheet,
-  user: User,
+  user: { [key: string]: any },
   superiorEmail: string
 ) {
   const { rowNumber, primaryEmail } = user;
