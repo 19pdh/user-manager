@@ -1,0 +1,13 @@
+[
+  {
+    "name": "Sheet1",
+    "scriptId": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "parentId": ["XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"],
+    "_comment": "scriptId get from script.google.com and parentId is the document id"
+  },
+  {
+    "name": "Sheet2",
+    "scriptId": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "parentId": ["XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"]
+  }
+]

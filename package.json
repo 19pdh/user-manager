@@ -1,0 +1,29 @@
+{
+  "name": "user-manager",
+  "version": "1.0.0",
+  "description": "User manager of Google Workspace using Google App Script",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup --config"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/19pdh/user-manager"
+  },
+  "author": "Patryk Niedźwiedziński",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.12.10",
+    "@babel/plugin-transform-runtime": "^7.12.10",
+    "@babel/preset-env": "^7.12.11",
+    "@babel/preset-typescript": "^7.12.7",
+    "@google/clasp": "^2.3.0",
+    "@rollup/plugin-babel": "^5.2.2",
+    "@rollup/plugin-node-resolve": "^11.0.1",
+    "@types/google-apps-script": "^1.0.20",
+    "@types/node": "^12.19.9",
+    "rollup": "^2.35.1",
+    "typescript": "^4.1.3"
+  }
+}
