@@ -1,20 +1,11 @@
-import { updateRow } from "../lib/sheet";
-import { getGoogleUser } from "../lib/user";
-import { parseFormUrlEncoded, sendEmail } from "../lib/utils";
+import { getSheet, updateRow } from "../lib/sheet";
+import { getUser, getGoogleUser } from "../lib/user";
+import { returnJSON, sendEmail } from "../lib/utils";
 import { verifyToken } from "../lib/auth";
-import {
-  ADMIN_MAIL,
-  MANAGER_MAIL,
-  LEADERS_GROUP,
-  APP_URL,
-  GOOGLE_CLIENT_ID,
-} from "../config";
+import { ADMIN_MAIL, MANAGER_MAIL, LEADERS_GROUP } from "../config";
 
-function acceptUser(
-  sheet: GoogleAppsScript.Spreadsheet.Sheet,
-  user: { [key: string]: any },
-  superiorEmail: string
-) {
+function acceptUser(user: { [key: string]: any }, superiorEmail: string) {
+  const sheet = getSheet();
   const { rowNumber, primaryEmail } = user;
   const link = SpreadsheetApp.getActiveSpreadsheet().getUrl();
   updateRow(sheet, rowNumber, {
@@ -33,35 +24,39 @@ Zobacz: ${link}`
   );
 }
 
-export function doGet(e: GoogleAppsScript.Events.DoGet) {
-  const id = e.parameter.id;
-  const template = HtmlService.createTemplateFromFile("confirm");
-  template.redirectUrl = APP_URL;
-  template.googleClientId = GOOGLE_CLIENT_ID;
-  template.mail = `${id}@zhr.pl`;
-  return template.evaluate();
-}
-
-export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
+export function doPost({
+  parameter,
+  postData,
+}: GoogleAppsScript.Events.DoPost) {
   Logger.log(JSON.stringify(postData));
+  Logger.log(parameter.id);
   try {
-    const form = parseFormUrlEncoded(postData.contents);
-    const token = form.credential;
+    if (!parameter.id) {
+      throw new Error("No id provided");
+    }
+    const body = JSON.parse(postData.contents);
+    const token = body.credential;
     if (!token) {
       throw new Error("No token provided");
     }
     const payload: any = verifyToken(token);
-    if (payload) {
-      const superiorUserId = payload["sub"];
-      const superiorUser = getGoogleUser(superiorUserId);
-      if (superiorUser.orgUnitPath != LEADERS_GROUP) {
-        throw new Error("Użytkownik nie znajduje się na liście instruktorów");
-      }
-    } else {
+    if (!payload) {
       throw new Error("Niepoprawny token uwierzytelniający");
     }
+    const superiorUserId = payload["sub"];
+    const superiorUser = getGoogleUser(superiorUserId);
+    if (superiorUser.orgUnitPath != LEADERS_GROUP) {
+      throw new Error("Użytkownik nie znajduje się na liście instruktorów");
+    }
+
+    const user = getUser(`${parameter.id}@zhr.pl`);
+    if (!superiorUser.primaryEmail) {
+      throw new Error("superiorUser primaryEmail is undefined");
+    }
+    acceptUser(user, superiorUser.primaryEmail);
+    return returnJSON({ status: "success" });
   } catch (err) {
-    return htmlErrorHandler(err as Error, {
+    return jsonErrorHandler(err as Error, {
       context: {
         err,
         superiorEmail: Session.getActiveUser().getEmail(),
@@ -71,15 +66,12 @@ export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
   }
 }
 
-function htmlErrorHandler(
+function jsonErrorHandler(
   err: Error,
   { context, func = "unknown" }: { context: any; func?: string }
 ) {
   errorHandler(err, func, context);
-  const template = HtmlService.createTemplateFromFile("superiorError");
-  template.error = err.message;
-  template.superiorEmail = context.superiorEmail;
-  return template.evaluate();
+  return returnJSON({ error: err.message });
 }
 
 function errorHandler(err: Error, func = "unknown", context = undefined) {

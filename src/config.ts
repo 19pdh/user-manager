@@ -8,3 +8,4 @@ export const NONLEADERS_GROUP = process.env.NONLEADERS_GROUP || "";
 export const UNIT_GROUP = process.env.UNIT_GROUP || "";
 export const SURVEY_LINK = process.env.SURVEY_LINK || "";
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
+export const PROXY_URL = process.env.PROXY_URL || "";

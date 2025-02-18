@@ -3,19 +3,65 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Założenie konta <?= mail ?></title>
-    <script
-      src="https://accounts.google.com/gsi/client"
-      async=""
-      defer=""
-    ></script>
+    <title>Założenie konta</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+      function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        google.accounts.id.initialize({
+          client_id: "<?= GOOGLE_CLIENT_ID ?>",
+          auto_prompt: false,
+          hd: "zhr.pl",
+          callback: handleCredentialResponse,
+        });
+
+        google.accounts.id.renderButton(
+          document.getElementById("g_id_signin"),
+          { theme: "outline", size: "large" }
+        );
+
+        function handleCredentialResponse(response) {
+          console.log("Encoded JWT ID token: " + response.credential);
+
+          const userId = getQueryParam("id");
+          const loginUri = `<?= PROXY_URL ?>/confirm-zhr.php?id=${encodeURIComponent(
+            userId
+          )}`;
+
+          // Prepare the JSON payload
+          const payload = {
+            credential: response.credential,
+          };
+
+          // Send the POST request with JSON data
+          fetch(loginUri, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log("Response from server:", data);
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+            });
+        }
+      });
+    </script>
     <style>
       body {
         margin: 0;
         padding: 0;
         font-family: "Roboto Slab", sans-serif;
-        background-color: #fff; /* --bg-primary */
-        color: #000; /* --primary */
+        background-color: #fff;
+        color: #000;
       }
       .container {
         max-width: 600px;
@@ -25,24 +71,14 @@
         overflow: hidden;
       }
       .header {
-        background-color: #507b34; /* --bg-secondary */
-        color: #fff; /* --secondary */
+        background-color: #507b34;
+        color: #fff;
         padding: 20px;
         text-align: center;
       }
       .content {
         padding: 20px;
         text-align: center;
-      }
-      .button {
-        display: inline-block;
-        padding: 10px 20px;
-        font-size: 16px;
-        color: #fff;
-        background-color: #507b34; /* --bg-secondary */
-        text-decoration: none;
-        border-radius: 5px;
-        margin: 15px;
       }
       .footer {
         text-align: center;
@@ -55,33 +91,24 @@
   <body>
     <div class="container">
       <div class="header">
-        <h1>
-          Potwierdź założenie konta
-          <?= mail ?>
-        </h1>
+        <h1>Potwierdź założenie konta <span id="user_id_display"></span></h1>
       </div>
       <div class="content">
-        <div
-          id="g_id_onload"
-          data-client_id="<?= googleClientId ?>"
-          data-login_uri="<?= redirectUrl ?>"
-          data-auto_prompt="false"
-          data-hd="zhr.pl"
-        ></div>
-        <div
-          class="g_id_signin"
-          data-type="standard"
-          data-size="large"
-          data-theme="outline"
-          data-text="sign_in_with"
-          data-shape="rectangular"
-          data-logo_alignment="left"
-        ></div>
+        <div id="g_id_signin"></div>
       </div>
-
       <div class="footer">
         <p>Zespół IT ZHR Okręg Wielkopolski</p>
       </div>
     </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const userId = getQueryParam("id");
+        if (userId) {
+          document.getElementById(
+            "user_id_display"
+          ).textContent = `${userId}@zhr.pl`;
+        }
+      });
+    </script>
   </body>
 </html>
