@@ -1,5 +1,5 @@
 import { getSheet, updateRow, getRow } from "../lib/sheet";
-import { createUser } from "../lib/user";
+import { createUser, generatePassword } from "../lib/user";
 import { sendEmail } from "../lib/utils";
 import {
   MANAGER_MAIL,
@@ -8,11 +8,6 @@ import {
   UNIT_GROUP,
   ADMIN_MAIL,
 } from "../config";
-
-interface Range {
-  columnStart: number;
-  rowStart: number;
-}
 
 export function onEdit({
   user,
@@ -48,17 +43,22 @@ export function onEdit({
   if (userToCreate.isUnit) {
     orgUnitPath = UNIT_GROUP;
   }
+
+  const password = generatePassword(10);
+
   createUser(
     userToCreate.name,
     userToCreate.surname,
     userToCreate.primaryEmail,
     userToCreate.recoveryEmail,
     userToCreate.recoveryPhone,
-    orgUnitPath
+    orgUnitPath,
+    password
   );
   updateRow(sheet, row, { timestamp: new Date(), exists: true });
   const template = HtmlService.createTemplateFromFile("created");
   template.mail = userToCreate.primaryEmail;
+  template.password = password;
   sendEmail(
     userToCreate.recoveryEmail,
     "⚜️ Twój mail @zhr.pl jest już gotowy!",
