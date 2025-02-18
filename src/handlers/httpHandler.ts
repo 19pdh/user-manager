@@ -1,6 +1,7 @@
-import { getSheet, updateRow } from "../lib/sheet";
-import { getUser, getGoogleUser } from "../lib/user";
+import { updateRow } from "../lib/sheet";
+import { getGoogleUser } from "../lib/user";
 import { parseFormUrlEncoded, sendEmail } from "../lib/utils";
+import { verifyToken } from "../lib/auth";
 import {
   ADMIN_MAIL,
   MANAGER_MAIL,
@@ -8,7 +9,6 @@ import {
   APP_URL,
   GOOGLE_CLIENT_ID,
 } from "../config";
-import { KJUR, b64utoutf8, KEYUTIL, RSAKey } from "jsrsasign";
 
 function acceptUser(
   sheet: GoogleAppsScript.Spreadsheet.Sheet,
@@ -31,13 +31,6 @@ function acceptUser(
 Wiersz: ${rowNumber}
 Zobacz: ${link}`
   );
-}
-
-class OrgUnitPathError extends Error {
-  constructor(userEmail: string, orgUnitPath: string) {
-    super(`User '${userEmail}' was not found in ${orgUnitPath}`);
-    this.name = "OrgUnitPathError";
-  }
 }
 
 export function doGet(e: GoogleAppsScript.Events.DoGet) {
@@ -78,63 +71,9 @@ export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
   }
 }
 
-function verifyToken(token: string) {
-  const parts = token.split(".");
-  if (parts.length !== 3) {
-    throw new Error("Invalid JWT structure");
-  }
-
-  // Find the key with the matching kid
-  const header: any | null = KJUR.jws.JWS.readSafeJSONString(
-    b64utoutf8(parts[0])
-  );
-  if (!header) {
-    throw new Error("Invalid JWT header");
-  }
-
-  return verifyJWT(token, header.kid);
-}
-
-function getGoogleKey(keyId: string) {
-  // Fetch Google's public keys
-  const response = UrlFetchApp.fetch(
-    "https://www.googleapis.com/oauth2/v3/certs"
-  );
-  const keys = JSON.parse(response.getContentText());
-  const key = keys.keys.find((k: { kid: string }) => k.kid === keyId);
-  if (!key) {
-    throw new Error("No matching key found");
-  }
-  return KEYUTIL.getKey(key) as RSAKey;
-}
-
-export function verifyJWT(jwt: string, keyId: string) {
-  try {
-    // Verify the JWT
-    const publicKey = getGoogleKey(keyId);
-    const isValid = KJUR.jws.JWS.verify(jwt, publicKey, ["RS256"]);
-    if (isValid) {
-      // Parse the JWT payload
-      const payload = KJUR.jws.JWS.parse(jwt).payloadObj;
-      Logger.log("JWT is valid");
-      Logger.log(JSON.stringify(payload));
-      return payload;
-    } else {
-      Logger.log("JWT verification failed.");
-      return null;
-    }
-  } catch (e) {
-    console.error(e);
-    return null;
-  }
-}
-
 function htmlErrorHandler(
   err: Error,
-  {
-    context,
-    func = "unknown",
-  }: { context: any; func?: string; isOrgUnitPathError?: boolean }
+  { context, func = "unknown" }: { context: any; func?: string }
 ) {
   errorHandler(err, func, context);
   const template = HtmlService.createTemplateFromFile("superiorError");
