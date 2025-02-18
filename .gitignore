@@ -1,5 +1,8 @@
 .clasp.json
 utils/sheets.json
-build
 node_modules
 .env
+
+build/*
+
+!build/appsscript.json

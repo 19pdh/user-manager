@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "source ./.env && rollup --config"
+    "build": "source ./.env && rollup --config",
+    "postbuild": "cp src/templates/*.html build && sed -i '/exports/d' build/index.js"
   },
   "repository": {
     "type": "git",
