@@ -4,6 +4,13 @@ import { parseFormUrlEncoded, sendEmail } from "../lib/utils";
 import { verifyToken } from "../lib/auth";
 import { ADMIN_MAIL, MANAGER_MAIL, LEADERS_GROUP } from "../config";
 
+class OrgUnitPathError extends Error {
+  constructor(userEmail: string, orgUnitPath: string) {
+    super(`User '${userEmail}' was not found in ${orgUnitPath}`);
+    this.name = "OrgUnitPathError";
+  }
+}
+
 /**
  * Handles the POST request
  */
@@ -22,12 +29,14 @@ export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
     template.mail = user.primaryEmail;
     return template.evaluate();
   } catch (err) {
+    const isOrgUnitPathError = err instanceof OrgUnitPathError;
     return htmlErrorHandler(err as Error, {
       context: {
         err,
         superiorEmail: Session.getActiveUser().getEmail(),
       },
       func: "superiorConfirm",
+      isOrgUnitPathError,
     });
   }
 }
@@ -52,11 +61,11 @@ function parseSuperiorToken(token: string) {
   }
   const superiorUserId = payload["sub"];
   const superiorUser = getGoogleUser(superiorUserId);
-  if (superiorUser.orgUnitPath != LEADERS_GROUP) {
-    throw new Error("Użytkownik nie znajduje się na liście instruktorów");
-  }
   if (!superiorUser.primaryEmail) {
     throw new Error("superiorUser primaryEmail is undefined");
+  }
+  if (superiorUser.orgUnitPath != LEADERS_GROUP) {
+    throw new OrgUnitPathError(superiorUser.primaryEmail, LEADERS_GROUP);
   }
   return superiorUser.primaryEmail;
 }
@@ -83,12 +92,17 @@ Zobacz: ${link}`
 
 function htmlErrorHandler(
   err: Error,
-  { context, func = "unknown" }: { context: any; func?: string }
+  {
+    context,
+    func = "unknown",
+    isOrgUnitPathError = false,
+  }: { context: any; func?: string; isOrgUnitPathError?: boolean }
 ) {
   errorHandler(err, func, context);
   const template = HtmlService.createTemplateFromFile("superiorError");
   template.error = err.message;
   template.superiorEmail = context.superiorEmail;
+  template.isOrgUnitPathError = isOrgUnitPathError;
   return template.evaluate();
 }
 
