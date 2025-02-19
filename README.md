@@ -1,8 +1,8 @@
 # user manager
 
-Those scripts combine Google Forms, Sheets, Gmail and Admin panel to enable user creation 
+Those scripts combine Google Forms, Sheets, Gmail and Admin panel together, to enable user creation 
 automatization. User registers using Forms, the data is passed to Sheets and mail is being
-sent to the passed superior. After the supierior confirms the validity of request, the 
+sent to the superior (passed in form field). After the supierior confirms the validity of request, the 
 admin is notified via email and can click to approve new user creation request.
 
 ## Build
