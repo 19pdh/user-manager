@@ -34,9 +34,23 @@ export function sendEmail(
   });
 }
 
-export function returnJSON(data: any) {
-  var JSONString = JSON.stringify(data);
-  var JSONOutput = ContentService.createTextOutput(JSONString);
-  JSONOutput.setMimeType(ContentService.MimeType.JSON);
-  return JSONOutput;
+/**
+ * Parse an application/x-www-form-urlencoded string into an object
+ */
+export function parseFormUrlEncoded(encodedString: string) {
+  // Split the string by '&' to get key-value pairs
+  var pairs = encodedString.split("&");
+  var result: any = {};
+
+  // Iterate over each pair
+  pairs.forEach(function (pair) {
+    // Split the pair by '=' to separate key and value
+    var parts = pair.split("=");
+    // Decode and assign key and value to the result object
+    var key = decodeURIComponent(parts[0].replace(/\+/g, " "));
+    var value = decodeURIComponent(parts[1].replace(/\+/g, " "));
+    result[key] = value;
+  });
+
+  return result;
 }

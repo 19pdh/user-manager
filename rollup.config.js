@@ -57,29 +57,11 @@ export default {
           "<?= GOOGLE_CLIENT_ID ?>",
           process.env.GOOGLE_CLIENT_ID
         );
-        template = template.replace("<?= PROXY_URL ?>", process.env.PROXY_URL);
-
-        return template;
-      },
-      fileName: "confirm-zhr.html",
-    }),
-    html({
-      template: () => {
-        // Read the HTML template file
-        const templatePath = path.resolve(
-          __dirname,
-          "src",
-          "templates",
-          "confirm.php"
-        );
-        let template = fs.readFileSync(templatePath, "utf8");
-
-        // Replace the placeholders with actual values
         template = template.replace("<?= APP_URL ?>", process.env.APP_URL);
 
         return template;
       },
-      fileName: "confirm-zhr.php",
+      fileName: "confirm-zhr.html",
     }),
   ],
 };

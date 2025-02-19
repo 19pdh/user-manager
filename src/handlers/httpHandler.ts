@@ -1,8 +1,65 @@
 import { getSheet, updateRow } from "../lib/sheet";
 import { getUser, getGoogleUser } from "../lib/user";
-import { returnJSON, sendEmail } from "../lib/utils";
+import { parseFormUrlEncoded, sendEmail } from "../lib/utils";
 import { verifyToken } from "../lib/auth";
 import { ADMIN_MAIL, MANAGER_MAIL, LEADERS_GROUP } from "../config";
+
+/**
+ * Handles the POST request
+ */
+export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
+  Logger.log(JSON.stringify(postData));
+  try {
+    const { token, userMail } = parseFormData(postData.contents);
+
+    const user = getUser(userMail);
+    const superiorMail = parseSuperiorToken(token);
+
+    Logger.log(`Confirming user ${userMail} by ${superiorMail}`);
+
+    acceptUser(user, superiorMail);
+    const template = HtmlService.createTemplateFromFile("superiorConfirmed");
+    template.mail = user.primaryEmail;
+    return template.evaluate();
+  } catch (err) {
+    return htmlErrorHandler(err as Error, {
+      context: {
+        err,
+        superiorEmail: Session.getActiveUser().getEmail(),
+      },
+      func: "superiorConfirm",
+    });
+  }
+}
+
+function parseFormData(data: string) {
+  const form = parseFormUrlEncoded(data);
+  const token = form.credential;
+  if (!token) {
+    throw new Error("No token provided");
+  }
+  if (!form.state) {
+    throw new Error("No state provided");
+  }
+  const userMail = `${form.state}@zhr.pl`;
+  return { token, userMail };
+}
+
+function parseSuperiorToken(token: string) {
+  const payload: any = verifyToken(token);
+  if (!payload) {
+    throw new Error("Niepoprawny token uwierzytelniający");
+  }
+  const superiorUserId = payload["sub"];
+  const superiorUser = getGoogleUser(superiorUserId);
+  if (superiorUser.orgUnitPath != LEADERS_GROUP) {
+    throw new Error("Użytkownik nie znajduje się na liście instruktorów");
+  }
+  if (!superiorUser.primaryEmail) {
+    throw new Error("superiorUser primaryEmail is undefined");
+  }
+  return superiorUser.primaryEmail;
+}
 
 function acceptUser(user: { [key: string]: any }, superiorEmail: string) {
   const sheet = getSheet();
@@ -24,54 +81,15 @@ Zobacz: ${link}`
   );
 }
 
-export function doPost({
-  parameter,
-  postData,
-}: GoogleAppsScript.Events.DoPost) {
-  Logger.log(JSON.stringify(postData));
-  Logger.log(parameter.id);
-  try {
-    if (!parameter.id) {
-      throw new Error("No id provided");
-    }
-    const body = JSON.parse(postData.contents);
-    const token = body.credential;
-    if (!token) {
-      throw new Error("No token provided");
-    }
-    const payload: any = verifyToken(token);
-    if (!payload) {
-      throw new Error("Niepoprawny token uwierzytelniający");
-    }
-    const superiorUserId = payload["sub"];
-    const superiorUser = getGoogleUser(superiorUserId);
-    if (superiorUser.orgUnitPath != LEADERS_GROUP) {
-      throw new Error("Użytkownik nie znajduje się na liście instruktorów");
-    }
-
-    const user = getUser(`${parameter.id}@zhr.pl`);
-    if (!superiorUser.primaryEmail) {
-      throw new Error("superiorUser primaryEmail is undefined");
-    }
-    acceptUser(user, superiorUser.primaryEmail);
-    return returnJSON({ status: "success" });
-  } catch (err) {
-    return jsonErrorHandler(err as Error, {
-      context: {
-        err,
-        superiorEmail: Session.getActiveUser().getEmail(),
-      },
-      func: "superiorConfirm",
-    });
-  }
-}
-
-function jsonErrorHandler(
+function htmlErrorHandler(
   err: Error,
   { context, func = "unknown" }: { context: any; func?: string }
 ) {
   errorHandler(err, func, context);
-  return returnJSON({ error: err.message });
+  const template = HtmlService.createTemplateFromFile("superiorError");
+  template.error = err.message;
+  template.superiorEmail = context.superiorEmail;
+  return template.evaluate();
 }
 
 function errorHandler(err: Error, func = "unknown", context = undefined) {

@@ -12,47 +12,20 @@
       }
 
       document.addEventListener("DOMContentLoaded", function () {
+        const userId = getQueryParam("id");
+
         google.accounts.id.initialize({
           client_id: "<?= GOOGLE_CLIENT_ID ?>",
           auto_prompt: false,
           hd: "zhr.pl",
-          callback: handleCredentialResponse,
+          login_uri: "<?= APP_URL ?>",
+          ux_mode: "redirect",
         });
 
         google.accounts.id.renderButton(
           document.getElementById("g_id_signin"),
-          { theme: "outline", size: "large" }
+          { theme: "outline", size: "large", state: userId }
         );
-
-        function handleCredentialResponse(response) {
-          console.log("Encoded JWT ID token: " + response.credential);
-
-          const userId = getQueryParam("id");
-          const loginUri = `<?= PROXY_URL ?>/confirm-zhr.php?id=${encodeURIComponent(
-            userId
-          )}`;
-
-          // Prepare the JSON payload
-          const payload = {
-            credential: response.credential,
-          };
-
-          // Send the POST request with JSON data
-          fetch(loginUri, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              console.log("Response from server:", data);
-            })
-            .catch((error) => {
-              console.error("Error:", error);
-            });
-        }
       });
     </script>
     <style>
