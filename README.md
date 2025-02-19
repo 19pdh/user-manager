@@ -22,7 +22,7 @@ npm run build
 For deployment I've written script in `/utils`, which uses [clasp](https://github.com/google/clasp)
 
 ```
-cp build
+cd build
 ../utils/updateSheets.sh ../utils/sheets.json
 ```
 
