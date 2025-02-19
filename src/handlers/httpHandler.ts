@@ -19,8 +19,8 @@ export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
   try {
     const { token, userMail } = parseFormData(postData.contents);
 
-    const user = getUser(userMail);
     const superiorMail = parseSuperiorToken(token);
+    const user = getUser(userMail);
 
     Logger.log(`Confirming user ${userMail} by ${superiorMail}`);
 

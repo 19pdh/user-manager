@@ -4,16 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Założenie konta</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script
+      src="https://accounts.google.com/gsi/client"
+      async
+      defer
+      onload="initGoogle()"
+    ></script>
     <script>
       function getQueryParam(param) {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get(param);
       }
 
-      document.addEventListener("DOMContentLoaded", function () {
+      function initGoogle() {
         const userId = getQueryParam("id");
-
         google.accounts.id.initialize({
           client_id: "<?= GOOGLE_CLIENT_ID ?>",
           auto_prompt: false,
@@ -21,12 +25,11 @@
           login_uri: "<?= APP_URL ?>",
           ux_mode: "redirect",
         });
-
         google.accounts.id.renderButton(
           document.getElementById("g_id_signin"),
           { theme: "outline", size: "large", state: userId }
         );
-      });
+      }
     </script>
     <style>
       body {
