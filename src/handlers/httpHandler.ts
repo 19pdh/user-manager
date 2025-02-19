@@ -6,7 +6,7 @@ import { ADMIN_MAIL, MANAGER_MAIL, LEADERS_GROUP } from "../config";
 
 class OrgUnitPathError extends Error {
   constructor(userEmail: string, orgUnitPath: string) {
-    super(`User '${userEmail}' was not found in ${orgUnitPath}`);
+    super(`Użytkownik '${userEmail}' nie jest w jednostce ${orgUnitPath}`);
     this.name = "OrgUnitPathError";
   }
 }
@@ -101,7 +101,6 @@ function htmlErrorHandler(
   errorHandler(err, func, context);
   const template = HtmlService.createTemplateFromFile("superiorError");
   template.error = err.message;
-  template.superiorEmail = context.superiorEmail;
   template.isOrgUnitPathError = isOrgUnitPathError;
   return template.evaluate();
 }
