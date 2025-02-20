@@ -1,24 +1,7 @@
 import { ADMIN_MAIL } from "../config";
 import { labelToColumnLetter, getField, getSheet } from "../lib/sheet";
-import { getUser, getGoogleUser, deleteUser } from "../lib/user";
+import { getGoogleUser, deleteUser } from "../lib/user";
 import { sendEmail } from "../lib/utils";
-
-function getFeedback(mail: string): void {
-  if (!AdminDirectory.Users) {
-    throw new Error("AdminDirectory.Users is undefined");
-  }
-  const { primaryEmail, recoveryEmail } = AdminDirectory.Users.get(mail);
-  const { superiorEmail } = getUser(mail);
-  const msg = `Czuwaj!
-
-Gdy zakładaliśmy Twoje konto ${primaryEmail} nie posiadałaś/posiadałeś jeszcze stopnia instruktorskiego. Czy coś w tym temacie się zmieniło?
-`;
-  sendEmail(
-    [primaryEmail, recoveryEmail, superiorEmail].join(","),
-    `Wiosenne porządki - konto ${primaryEmail}`,
-    msg
-  );
-}
 
 /**
  * @param {Date} date1 The date
@@ -108,20 +91,6 @@ export function freshCleanup(): void {
       "freshCleanup: usunięto nieaktywnych użytkowników",
       msg
     );
-  }
-}
-
-function testGetFeedback(): void {
-  getFeedback("patryk.niedzwiedzinski@zhr.pl");
-}
-
-function testGetOldUsers(): void {
-  const sheet = getSheet();
-  const users = getOldUsers(sheet);
-  for (const user of users) {
-    if (isAccountInactive(user)) {
-      console.log(`To delete ${user.primaryEmail}`);
-    }
   }
 }
 

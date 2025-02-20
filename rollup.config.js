@@ -1,6 +1,14 @@
+import plaindotenv from "dotenv";
+plaindotenv.config();
+
 import dotenv from "rollup-plugin-dotenv";
 import { babel } from "@rollup/plugin-babel";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
+import commonjs from "@rollup/plugin-commonjs";
+import json from "@rollup/plugin-json";
+import html from "@rollup/plugin-html";
+import fs from "fs";
+import path from "path";
 
 const extensions = [".ts", ".js"];
 
@@ -31,5 +39,29 @@ export default {
     }),
     babel({ extensions, babelHelpers: "runtime" }),
     dotenv(),
+    commonjs(),
+    json(),
+    html({
+      template: () => {
+        // Read the HTML template file
+        const templatePath = path.resolve(
+          __dirname,
+          "src",
+          "templates",
+          "confirm.html"
+        );
+        let template = fs.readFileSync(templatePath, "utf8");
+
+        // Replace the placeholders with actual values
+        template = template.replace(
+          "<?= GOOGLE_CLIENT_ID ?>",
+          process.env.GOOGLE_CLIENT_ID
+        );
+        template = template.replace("<?= APP_URL ?>", process.env.APP_URL);
+
+        return template;
+      },
+      fileName: "confirm-zhr.html",
+    }),
   ],
 };

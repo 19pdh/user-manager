@@ -1,7 +1,7 @@
 import { getSheet, getRow, updateRow } from "../lib/sheet";
 import { proposeEmail } from "../lib/utils";
 import { sendEmail } from "../lib/utils";
-import { ADMIN_MAIL, APP_URL } from "../config";
+import { ADMIN_MAIL, PROXY_URL } from "../config";
 
 /**
  * Handles the event
@@ -46,7 +46,7 @@ function handleFormSubmit(
 function notifySuperior(superiorEmail: string, name: string, surname: string) {
   const id = proposeEmail(name, surname);
   const mail = `${id}@zhr.pl`;
-  const verificationLink = `${APP_URL}?id=${id}`;
+  const verificationLink = `${PROXY_URL}/confirm-zhr.html?id=${id}`;
   const template = HtmlService.createTemplateFromFile("superior");
   template.mail = mail;
   template.verificationLink = verificationLink;

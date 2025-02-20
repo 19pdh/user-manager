@@ -1,6 +1,6 @@
 #!/bin/sh
-## On NixOS or with Nix installed:
-#!/usr/bin/env nix-shell -p js google-clasp
+# On NixOS or with Nix installed run in:
+# nix-shell -p jq google-clasp
 #
 # USAGE:
 # ./utils/updateSheets.sh sheets.json

@@ -1,13 +1,77 @@
 import { getSheet, updateRow } from "../lib/sheet";
 import { getUser, getGoogleUser } from "../lib/user";
-import { sendEmail } from "../lib/utils";
+import { parseFormUrlEncoded, sendEmail } from "../lib/utils";
+import { verifyToken } from "../lib/auth";
 import { ADMIN_MAIL, MANAGER_MAIL, LEADERS_GROUP } from "../config";
 
-function acceptUser(
-  sheet: GoogleAppsScript.Spreadsheet.Sheet,
-  user: { [key: string]: any },
-  superiorEmail: string
-) {
+class OrgUnitPathError extends Error {
+  constructor(userEmail: string, orgUnitPath: string) {
+    super(`Użytkownik '${userEmail}' nie jest w jednostce ${orgUnitPath}`);
+    this.name = "OrgUnitPathError";
+  }
+}
+
+/**
+ * Handles the POST request
+ */
+export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
+  Logger.log(JSON.stringify(postData));
+  try {
+    const { token, userMail } = parseFormData(postData.contents);
+
+    const superiorMail = parseSuperiorToken(token);
+    const user = getUser(userMail);
+
+    Logger.log(`Confirming user ${userMail} by ${superiorMail}`);
+
+    acceptUser(user, superiorMail);
+    const template = HtmlService.createTemplateFromFile("superiorConfirmed");
+    template.mail = user.primaryEmail;
+    return template.evaluate();
+  } catch (err) {
+    const isOrgUnitPathError = err instanceof OrgUnitPathError;
+    return htmlErrorHandler(err as Error, {
+      context: {
+        err,
+        postData,
+      },
+      func: "superiorConfirm",
+      isOrgUnitPathError,
+    });
+  }
+}
+
+function parseFormData(data: string) {
+  const form = parseFormUrlEncoded(data);
+  const token = form.credential;
+  if (!token) {
+    throw new Error("No token provided");
+  }
+  if (!form.state) {
+    throw new Error("No state provided");
+  }
+  const userMail = `${form.state}@zhr.pl`;
+  return { token, userMail };
+}
+
+function parseSuperiorToken(token: string) {
+  const payload: any = verifyToken(token);
+  if (!payload) {
+    throw new Error("Niepoprawny token uwierzytelniający");
+  }
+  const superiorUserId = payload["sub"];
+  const superiorUser = getGoogleUser(superiorUserId);
+  if (!superiorUser.primaryEmail) {
+    throw new Error("superiorUser primaryEmail is undefined");
+  }
+  if (superiorUser.orgUnitPath != LEADERS_GROUP) {
+    throw new OrgUnitPathError(superiorUser.primaryEmail, LEADERS_GROUP);
+  }
+  return superiorUser.primaryEmail;
+}
+
+function acceptUser(user: { [key: string]: any }, superiorEmail: string) {
+  const sheet = getSheet();
   const { rowNumber, primaryEmail } = user;
   const link = SpreadsheetApp.getActiveSpreadsheet().getUrl();
   updateRow(sheet, rowNumber, {
@@ -26,69 +90,17 @@ Zobacz: ${link}`
   );
 }
 
-class OrgUnitPathError extends Error {
-  constructor(userEmail: string, orgUnitPath: string) {
-    super(`User '${userEmail}' was not found in ${orgUnitPath}`);
-    this.name = "OrgUnitPathError";
-  }
-}
-
-export function doGet(e: GoogleAppsScript.Events.DoGet) {
-  try {
-    const id = e.parameter.id;
-    if (!id) {
-      throw new Error("URL parameter 'id' should be passed");
-    }
-
-    const superiorEmail = Session.getActiveUser().getEmail();
-    if (!superiorEmail) {
-      throw new Error(
-        `Got unexpected value of superiorEmail: '${superiorEmail}'`
-      );
-    }
-
-    const superiorUser = getGoogleUser(superiorEmail);
-    if (!superiorUser) {
-      throw new Error(`Cannot access user '${superiorEmail}' in domain`);
-    }
-
-    if (superiorUser.orgUnitPath != LEADERS_GROUP) {
-      throw new OrgUnitPathError(superiorEmail, LEADERS_GROUP);
-    }
-
-    const sheet = getSheet();
-    const user = getUser(id + "@zhr.pl");
-
-    acceptUser(sheet, user, superiorEmail);
-
-    const template = HtmlService.createTemplateFromFile("superiorConfirmed");
-    template.mail = user.primaryEmail;
-    return template.evaluate();
-  } catch (err) {
-    const isOrgUnitPathError = err instanceof OrgUnitPathError;
-    return htmlErrorHandler(err as Error, {
-      context: {
-        e,
-        superiorEmail: Session.getActiveUser().getEmail(),
-      },
-      func: "superiorConfirm",
-      isOrgUnitPathError,
-    });
-  }
-}
-
 function htmlErrorHandler(
   err: Error,
   {
     context,
     func = "unknown",
-    isOrgUnitPathError,
+    isOrgUnitPathError = false,
   }: { context: any; func?: string; isOrgUnitPathError?: boolean }
 ) {
   errorHandler(err, func, context);
   const template = HtmlService.createTemplateFromFile("superiorError");
   template.error = err.message;
-  template.superiorEmail = context.superiorEmail;
   template.isOrgUnitPathError = isOrgUnitPathError;
   return template.evaluate();
 }
