@@ -30,23 +30,16 @@ function getGoogleKey(keyId: string) {
   return KEYUTIL.getKey(key) as RSAKey;
 }
 
-function verifyJWT(jwt: string, keyId: string) {
-  try {
-    // Verify the JWT
-    const publicKey = getGoogleKey(keyId);
-    const isValid = KJUR.jws.JWS.verify(jwt, publicKey, ["RS256"]);
-    if (isValid) {
-      // Parse the JWT payload
-      const payload = KJUR.jws.JWS.parse(jwt).payloadObj;
-      Logger.log("JWT is valid");
-      Logger.log(JSON.stringify(payload));
-      return payload;
-    } else {
-      Logger.log("JWT verification failed.");
-      return null;
-    }
-  } catch (e) {
-    console.error(e);
-    return null;
+function verifyJWT(jwt: string, keyId: string): object | null {
+  // Verify the JWT
+  const publicKey = getGoogleKey(keyId);
+  const isValid = KJUR.jws.JWS.verify(jwt, publicKey, ["RS256"]);
+  if (!isValid) {
+    throw new Error("Invalid JWT signature");
   }
+  // Parse the JWT payload
+  const payload = KJUR.jws.JWS.parse(jwt).payloadObj as object;
+  Logger.log("JWT is valid");
+  Logger.log(JSON.stringify(payload));
+  return payload;
 }
