@@ -33,7 +33,7 @@ export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
     return htmlErrorHandler(err as Error, {
       context: {
         err,
-        superiorEmail: Session.getActiveUser().getEmail(),
+        postData,
       },
       func: "superiorConfirm",
       isOrgUnitPathError,
