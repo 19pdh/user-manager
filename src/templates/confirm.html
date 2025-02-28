@@ -80,9 +80,7 @@
       document.addEventListener("DOMContentLoaded", function () {
         const userId = getQueryParam("id");
         if (userId) {
-          document.getElementById(
-            "user_id_display"
-          ).textContent = `${userId}@zhr.pl`;
+          document.getElementById("user_id_display").textContent = userId;
         }
       });
     </script>
