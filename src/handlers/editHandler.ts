@@ -4,7 +4,6 @@ import { sendEmail } from "../lib/utils";
 import {
   MANAGER_MAIL,
   NONLEADERS_GROUP,
-  LEADERS_GROUP,
   UNIT_GROUP,
   ADMIN_MAIL,
 } from "../config";
@@ -37,9 +36,6 @@ export function onEdit({
   }
 
   let orgUnitPath = NONLEADERS_GROUP;
-  if (userToCreate.isLeader) {
-    orgUnitPath = LEADERS_GROUP;
-  }
   if (userToCreate.isUnit) {
     orgUnitPath = UNIT_GROUP;
   }
@@ -47,7 +43,7 @@ export function onEdit({
   const password = generatePassword(10);
 
   createUser(
-    userToCreate.name,
+    userToCreate.name || userToCreate.troupName,
     userToCreate.surname,
     userToCreate.primaryEmail,
     userToCreate.recoveryEmail,
