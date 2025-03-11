@@ -50,7 +50,7 @@ function parseFormData(data: string) {
   if (!form.state) {
     throw new Error("No state provided");
   }
-  const userMail = `${form.state}@zhr.pl`;
+  const userMail = form.state;
   return { token, userMail };
 }
 

@@ -4,7 +4,6 @@ import { sendEmail } from "../lib/utils";
 import {
   MANAGER_MAIL,
   NONLEADERS_GROUP,
-  LEADERS_GROUP,
   UNIT_GROUP,
   ADMIN_MAIL,
 } from "../config";
@@ -37,11 +36,16 @@ export function onEdit({
   }
 
   let orgUnitPath = NONLEADERS_GROUP;
-  if (userToCreate.isLeader) {
-    orgUnitPath = LEADERS_GROUP;
-  }
   if (userToCreate.isUnit) {
     orgUnitPath = UNIT_GROUP;
+    // Split troupName into name and surname
+    // Last word used as surname, rest as (first) name
+    const parts = userToCreate.troupName.split(" ");
+    if (parts < 2) {
+      parts.push(parts[0]);
+    }
+    userToCreate.surname = parts.pop();
+    userToCreate.name = parts.join(" ");
   }
 
   const password = generatePassword(10);
