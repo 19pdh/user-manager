@@ -16,9 +16,9 @@ class OrgUnitPathError extends Error {
  */
 export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
   Logger.log(JSON.stringify(postData));
+  let token, userMail;
   try {
-    const { token, userMail } = parseFormData(postData.contents);
-
+    let { token, userMail } = parseFormData(postData.contents);
     const superiorMail = parseSuperiorToken(token);
     const user = getUser(userMail);
 
@@ -33,7 +33,7 @@ export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
     return htmlErrorHandler(err as Error, {
       context: {
         err,
-        postData,
+        userMail,
       },
       func: "superiorConfirm",
       isOrgUnitPathError,
