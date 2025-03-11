@@ -22,6 +22,7 @@ export function onFormSubmit(e: GoogleAppsScript.Events.SheetsOnFormSubmit) {
   updateRow(sheet, row, {
     status: "Oczekiwanie na opiekuna",
     primaryEmail,
+    isUnit: !!troupName,
   });
 }
 
