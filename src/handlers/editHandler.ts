@@ -38,12 +38,20 @@ export function onEdit({
   let orgUnitPath = NONLEADERS_GROUP;
   if (userToCreate.isUnit) {
     orgUnitPath = UNIT_GROUP;
+    // Split troupName into name and surname
+    // Last word used as surname, rest as (first) name
+    const parts = userToCreate.troupName.split(" ");
+    if (parts < 2) {
+      parts.push(parts[0]);
+    }
+    userToCreate.surname = parts.pop();
+    userToCreate.name = parts.join(" ");
   }
 
   const password = generatePassword(10);
 
   createUser(
-    userToCreate.name || userToCreate.troupName,
+    userToCreate.name,
     userToCreate.surname,
     userToCreate.primaryEmail,
     userToCreate.recoveryEmail,
