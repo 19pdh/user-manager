@@ -2,6 +2,7 @@ import { onFormSubmit } from "./handlers/formHandler";
 import { doPost } from "./handlers/httpHandler";
 import { onEdit } from "./handlers/editHandler";
 import { freshCleanup } from "./handlers/cleanupHandler";
+import { onOpen, groupUpdateHandler } from "./handlers/groupUpdateHandler";
 
 export {
   // send emails after form submit
@@ -12,4 +13,7 @@ export {
   onEdit,
   // CRON job - remove non-activated users
   freshCleanup,
+  // Google Sheets onOpen handler - update leaders group
+  onOpen,
+  groupUpdateHandler,
 };

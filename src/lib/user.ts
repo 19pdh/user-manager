@@ -1,4 +1,4 @@
-import { SURVEY_LINK } from "../config";
+import { SURVEY_LINK, LEADERS_GROUP } from "../config";
 import { getSheet, labelToColumnLetter, getRow, updateRow } from "./sheet";
 import { sendEmail } from "./utils";
 
@@ -132,4 +132,72 @@ export function generatePassword(length: number) {
   }
 
   return password;
+}
+
+export function updateGroup(mailList: string[]): { added: string[], removed: string[], notFound: string[] } {
+  if (AdminDirectory && AdminDirectory.Users) {
+    const userList = [];
+    const notFound = [];
+    const added = [];
+
+    // Add every email to the group and save the sub id to the userList array
+    for (const mail of mailList) {
+      try {
+        const user = AdminDirectory.Users.get(mail);
+        if (user.id) {
+          userList.push(user.id);
+          if (user.orgUnitPath !== LEADERS_GROUP) {
+            user.orgUnitPath = LEADERS_GROUP;
+            AdminDirectory.Users.update(user, user.id);
+            added.push(user.primaryEmail as string);
+            Logger.log(`User ${user.primaryEmail} has been added to the group`);
+          }
+        } else {
+          throw new Error(`User not found: ${mail}`);
+        }
+      } catch (error) {
+        notFound.push(mail);
+      }
+    }
+
+    // Remove users that were in the group before, but are not in the mailList
+    const removed = [];
+    let page;
+    let pageToken;
+    do {
+      page = AdminDirectory.Users.list({
+        domain: 'zhr.pl',
+        query: `orgUnitPath='${LEADERS_GROUP}'`,
+        orderBy: 'givenName',
+        maxResults: 100,
+        pageToken: pageToken
+      });
+      const users = page.users;
+
+      if (users) {
+        for (const user of users) {
+          if (user.id && user.orgUnitPath && user.orgUnitPath === LEADERS_GROUP) {
+            if (!userList.includes(user.id)) {
+              user.orgUnitPath = LEADERS_GROUP + "/Instruktorzy w rezerwie (wlp)";
+              try {
+                AdminDirectory.Users.update(user, user.id);
+                Logger.log(`User ${user.primaryEmail} has been removed from the group`);
+                removed.push(user.primaryEmail as string);
+              } catch (error) {
+                Logger.log(`Couldn't reassign user ${user.primaryEmail}`);
+              }
+            }
+          }
+        }
+      } else {
+        Logger.log('No users found.');
+      }
+
+      pageToken = page.nextPageToken;
+    } while (pageToken);
+
+    return { added, removed, notFound };
+  } else {
+    throw new Error("AdminDirectory.Users is undefined");
+  }
 }
