@@ -158,8 +158,7 @@ export function updateGroup(mailList: string[]): {
         if (user.id) {
           userList.push(user.id);
           if (user.orgUnitPath !== LEADERS_GROUP) {
-            user.orgUnitPath = LEADERS_GROUP;
-            AdminDirectory.Users.update(user, user.id);
+            AdminDirectory.Users.patch({ orgUnitPath: LEADERS_GROUP }, user.id);
             added.push(user.primaryEmail as string);
             Logger.log(`User ${user.primaryEmail} has been added to the group`);
           }
@@ -193,10 +192,14 @@ export function updateGroup(mailList: string[]): {
             user.orgUnitPath === LEADERS_GROUP
           ) {
             if (!userList.includes(user.id)) {
-              user.orgUnitPath =
-                LEADERS_GROUP + "/Instruktorzy w rezerwie (wlp)";
               try {
-                AdminDirectory.Users.update(user, user.id);
+                AdminDirectory.Users.patch(
+                  {
+                    orgUnitPath:
+                      LEADERS_GROUP + "/Instruktorzy w rezerwie (wlp)",
+                  },
+                  user.id
+                );
                 Logger.log(
                   `User ${user.primaryEmail} has been removed from the group`
                 );
