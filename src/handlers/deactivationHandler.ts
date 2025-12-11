@@ -80,11 +80,13 @@ export function oldCleanup(): void {
     pageToken = page.nextPageToken;
   } while (pageToken);
 
-  sendEmail(
-    ADMIN_MAIL,
-    "oldCleanup: deaktywacje wykonane",
-    deactivatedUsers.join(" \n")
-  );
+  if (deactivatedUsers.length) {
+    sendEmail(
+      ADMIN_MAIL,
+      "oldCleanup: deaktywacje wykonane",
+      deactivatedUsers.join(" \n")
+    );
+  }
 }
 
 /**
@@ -165,11 +167,13 @@ export function scheduleForDeactivation(): void {
     pageToken = page.nextPageToken;
   } while (pageToken);
 
-  sendEmail(
-    ADMIN_MAIL,
-    "scheduleForDeactivation: użytkownicy zaplanowani do dezaktywacji",
-    scheduledUsers.join(" \n")
-  );
+  if (scheduledUsers.length) {
+    sendEmail(
+      ADMIN_MAIL,
+      "scheduleForDeactivation: użytkownicy zaplanowani do dezaktywacji",
+      scheduledUsers.join(" \n")
+    );
+  }
 }
 
 function notifyForDeactivation(
