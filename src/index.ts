@@ -3,6 +3,10 @@ import { doPost } from "./handlers/httpHandler";
 import { onEdit } from "./handlers/editHandler";
 import { freshCleanup } from "./handlers/cleanupHandler";
 import { onOpen, groupUpdateHandler } from "./handlers/groupUpdateHandler";
+import {
+  oldCleanup,
+  scheduleForDeactivation,
+} from "./handlers/deactivationHandler";
 
 export {
   // send emails after form submit
@@ -16,4 +20,8 @@ export {
   // Google Sheets onOpen handler - update leaders group
   onOpen,
   groupUpdateHandler,
+  // CRON job - remove users scheduled for deactivation
+  oldCleanup,
+  // CRON job - schedule users for deactivation
+  scheduleForDeactivation,
 };

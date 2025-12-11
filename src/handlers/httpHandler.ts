@@ -1,5 +1,5 @@
 import { getSheet, updateRow } from "../lib/sheet";
-import { getUser, getGoogleUser } from "../lib/user";
+import { getUser, getGoogleUser, getGoogleUserSafe } from "../lib/user";
 import { parseFormUrlEncoded, sendEmail } from "../lib/utils";
 import { verifyToken } from "../lib/auth";
 import { ADMIN_MAIL, MANAGER_MAIL, LEADERS_GROUP } from "../config";
@@ -20,13 +20,24 @@ export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
   try {
     let { token, userMail } = parseFormData(postData.contents);
     const superiorMail = parseSuperiorToken(token);
-    const user = getUser(userMail);
 
-    Logger.log(`Confirming user ${userMail} by ${superiorMail}`);
+    // Check if user exists
+    const googleUser = getGoogleUserSafe(userMail);
+    let confirmedEmail: string;
 
-    acceptUser(user, superiorMail);
+    if (googleUser) {
+      confirmExistingUser(googleUser, superiorMail);
+      Logger.log(`Confirming directory user ${userMail} by ${superiorMail}`);
+      confirmedEmail = googleUser.primaryEmail!;
+    } else {
+      const sheetUser = getUser(userMail);
+      confirmNewUser(sheetUser, superiorMail);
+      Logger.log(`Confirming user ${userMail} by ${superiorMail}`);
+      confirmedEmail = sheetUser.primaryEmail;
+    }
+
     const template = HtmlService.createTemplateFromFile("superiorConfirmed");
-    template.mail = user.primaryEmail;
+    template.mail = confirmedEmail;
     return template.evaluate();
   } catch (err) {
     const isOrgUnitPathError = err instanceof OrgUnitPathError;
@@ -70,7 +81,7 @@ function parseSuperiorToken(token: string) {
   return superiorUser.primaryEmail;
 }
 
-function acceptUser(user: { [key: string]: any }, superiorEmail: string) {
+function confirmNewUser(user: { [key: string]: any }, superiorEmail: string) {
   const sheet = getSheet();
   const { rowNumber, primaryEmail } = user;
   const link = SpreadsheetApp.getActiveSpreadsheet().getUrl();
@@ -87,6 +98,48 @@ function acceptUser(user: { [key: string]: any }, superiorEmail: string) {
 
 Wiersz: ${rowNumber}
 Zobacz: ${link}`
+  );
+}
+
+function confirmExistingUser(
+  googleUser: GoogleAppsScript.AdminDirectory.Schema.User,
+  superiorMail: string
+) {
+  const now = new Date();
+
+  const currentRelations = googleUser.relations || [];
+
+  // Remove deactivation schedule and update confirmation date
+  const updatedRelations = currentRelations.filter(
+    (r: GoogleAppsScript.AdminDirectory.Schema.UserRelation) =>
+      r.customType !== "scheduled_for_deactivation" &&
+      r.customType !== "confirmation_date" &&
+      r.type !== "manager"
+  );
+
+  updatedRelations.push({
+    type: "custom",
+    customType: "confirmation_date",
+    value: now.toISOString(),
+  });
+  updatedRelations.push({
+    type: "manager",
+    value: superiorMail,
+  });
+
+  AdminDirectory.Users!.patch(
+    { relations: updatedRelations },
+    googleUser.primaryEmail!
+  );
+
+  const template = HtmlService.createTemplateFromFile("deactivationCancelled");
+  template.mail = googleUser.primaryEmail;
+
+  sendEmail(
+    [googleUser.primaryEmail, googleUser.recoveryEmail].join(","),
+    "Konto @zhr.pl zostało potwierdzone",
+    "",
+    { htmlBody: template.evaluate().getContent() }
   );
 }
 
