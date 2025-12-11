@@ -42,8 +42,8 @@ export function onEdit({
     // Last word used as surname, rest as (first) name
 
     const parts = userToCreate.troupName
-      .trim()                // remove trailing/leading spaces
-      .split(/\s+/);         // split by one or more spaces
+      .trim() // remove trailing/leading spaces
+      .split(/\s+/); // split by one or more spaces
 
     if (parts < 2) {
       parts.push(parts[0]);
@@ -61,7 +61,8 @@ export function onEdit({
     userToCreate.recoveryEmail,
     userToCreate.recoveryPhone,
     orgUnitPath,
-    password
+    password,
+    userToCreate.superior
   );
   updateRow(sheet, row, { timestamp: new Date(), exists: true });
   const template = HtmlService.createTemplateFromFile("created");

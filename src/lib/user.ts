@@ -83,7 +83,8 @@ export function createUser(
   recoveryEmail: string,
   recoveryPhone: string,
   orgUnitPath: string,
-  password: string
+  password: string,
+  superiorEmail: string
 ) {
   const exists = userExists(primaryEmail);
   if (exists) {
@@ -113,6 +114,17 @@ export function createUser(
         value: recoveryPhone,
       },
     ],
+    relations: [
+      {
+        type: "manager",
+        value: superiorEmail,
+      },
+      {
+        type: "custom",
+        customType: "confirmation_date",
+        value: new Date().toISOString(),
+      },
+    ],
   };
   if (AdminDirectory && AdminDirectory.Users) {
     AdminDirectory.Users.insert(user);
@@ -134,7 +146,11 @@ export function generatePassword(length: number) {
   return password;
 }
 
-export function updateGroup(mailList: string[]): { added: string[], removed: string[], notFound: string[] } {
+export function updateGroup(mailList: string[]): {
+  added: string[];
+  removed: string[];
+  notFound: string[];
+} {
   if (AdminDirectory && AdminDirectory.Users) {
     const userList = [];
     const notFound = [];
@@ -147,8 +163,7 @@ export function updateGroup(mailList: string[]): { added: string[], removed: str
         if (user.id) {
           userList.push(user.id);
           if (user.orgUnitPath !== LEADERS_GROUP) {
-            user.orgUnitPath = LEADERS_GROUP;
-            AdminDirectory.Users.update(user, user.id);
+            AdminDirectory.Users.patch({ orgUnitPath: LEADERS_GROUP }, user.id);
             added.push(user.primaryEmail as string);
             Logger.log(`User ${user.primaryEmail} has been added to the group`);
           }
@@ -166,22 +181,33 @@ export function updateGroup(mailList: string[]): { added: string[], removed: str
     let pageToken;
     do {
       page = AdminDirectory.Users.list({
-        domain: 'zhr.pl',
+        domain: "zhr.pl",
         query: `orgUnitPath='${LEADERS_GROUP}'`,
-        orderBy: 'givenName',
+        orderBy: "givenName",
         maxResults: 100,
-        pageToken: pageToken
+        pageToken: pageToken,
       });
       const users = page.users;
 
       if (users) {
         for (const user of users) {
-          if (user.id && user.orgUnitPath && user.orgUnitPath === LEADERS_GROUP) {
+          if (
+            user.id &&
+            user.orgUnitPath &&
+            user.orgUnitPath === LEADERS_GROUP
+          ) {
             if (!userList.includes(user.id)) {
-              user.orgUnitPath = LEADERS_GROUP + "/Instruktorzy w rezerwie (wlp)";
               try {
-                AdminDirectory.Users.update(user, user.id);
-                Logger.log(`User ${user.primaryEmail} has been removed from the group`);
+                AdminDirectory.Users.patch(
+                  {
+                    orgUnitPath:
+                      LEADERS_GROUP + "/Instruktorzy w rezerwie (wlp)",
+                  },
+                  user.id
+                );
+                Logger.log(
+                  `User ${user.primaryEmail} has been removed from the group`
+                );
                 removed.push(user.primaryEmail as string);
               } catch (error) {
                 Logger.log(`Couldn't reassign user ${user.primaryEmail}`);
@@ -190,7 +216,7 @@ export function updateGroup(mailList: string[]): { added: string[], removed: str
           }
         }
       } else {
-        Logger.log('No users found.');
+        Logger.log("No users found.");
       }
 
       pageToken = page.nextPageToken;
