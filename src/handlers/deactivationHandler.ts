@@ -77,6 +77,7 @@ export function oldCleanup(): void {
         }
       }
     }
+    pageToken = page.nextPageToken;
   } while (pageToken);
 
   sendEmail(
@@ -194,7 +195,7 @@ function notifyForDeactivation(
     HtmlService.createTemplateFromFile("deactivationNotice");
   deactivationNoticeTemplate.mail = user.primaryEmail;
   deactivationNoticeTemplate.days = days === 1 ? "1 dzień" : `${days} dni`;
-  deactivationNoticeTemplate.verificationLink = `${PROXY_URL}/confirm-zhr.html?id=${user.id}`;
+  deactivationNoticeTemplate.verificationLink = `${PROXY_URL}/confirm-zhr.html?id=${user.primaryEmail}`;
 
   sendEmail(
     [user.primaryEmail, user.recoveryEmail].join(","),
@@ -221,16 +222,11 @@ function scheduleUserForDeactivation(
   user: GoogleAppsScript.AdminDirectory.Schema.User,
   deadline: Date
 ): void {
-  const existingDeadline = getRelation(
-    user.relations,
-    "scheduled_for_deactivation"
-  );
-  if (existingDeadline) {
-    throw new Error(
-      `User ${user.primaryEmail} is already scheduled for deactivation on ${existingDeadline}`
-    );
-  }
-  const currentRelations = user.relations || [];
+  const currentRelations =
+    user.relations?.filter(
+      (r: GoogleAppsScript.AdminDirectory.Schema.UserRelation) =>
+        r.customType !== "scheduled_for_deactivation"
+    ) || [];
   const newRelations = [
     ...currentRelations,
     {
