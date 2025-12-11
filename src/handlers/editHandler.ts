@@ -40,7 +40,11 @@ export function onEdit({
     orgUnitPath = UNIT_GROUP;
     // Split troupName into name and surname
     // Last word used as surname, rest as (first) name
-    const parts = userToCreate.troupName.split(" ");
+
+    const parts = userToCreate.troupName
+      .trim()                // remove trailing/leading spaces
+      .split(/\s+/);         // split by one or more spaces
+
     if (parts < 2) {
       parts.push(parts[0]);
     }
