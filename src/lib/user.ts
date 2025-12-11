@@ -63,6 +63,16 @@ export function getGoogleUser(
   }
 }
 
+export function getGoogleUserSafe(
+  email: string
+): GoogleAppsScript.AdminDirectory.Schema.User | null {
+  try {
+    return getGoogleUser(email);
+  } catch (e) {
+    return null;
+  }
+}
+
 function userExists(mail: string) {
   try {
     if (AdminDirectory && AdminDirectory.Users) {
