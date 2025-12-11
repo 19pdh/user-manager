@@ -119,6 +119,11 @@ export function createUser(
         type: "manager",
         value: superiorEmail,
       },
+      {
+        type: "custom",
+        customType: "confirmation_date",
+        value: new Date().toISOString(),
+      },
     ],
   };
   if (AdminDirectory && AdminDirectory.Users) {
