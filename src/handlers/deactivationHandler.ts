@@ -1,11 +1,11 @@
 import { sendEmail } from "../lib/utils";
-import { NONLEADERS_GROUP, PROXY_URL } from "../config";
+import { ADMIN_MAIL, NONLEADERS_GROUP, PROXY_URL } from "../config";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const DEACTIVATION_OFFSET_MS = 29 * 24 * 60 * 60 * 1000; // 4 weeks from now (4*7+1 = 29)
+const DEACTIVATION_OFFSET_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 /**
- * Worker function that checks if user should be deactivated
+ * Worker function that checks if user should be deactivated and notifies beforehand
  */
 export function oldCleanup(): void {
   if (!AdminDirectory || !AdminDirectory.Users) {
@@ -13,6 +13,7 @@ export function oldCleanup(): void {
   }
   let page: GoogleAppsScript.AdminDirectory.Schema.Users;
   let pageToken: string | undefined;
+  const deactivatedUsers: string[] = [];
 
   do {
     // Get users from NONLEADERS_GROUP
@@ -35,19 +36,38 @@ export function oldCleanup(): void {
       if (deadlineString) {
         const deadline = new Date(deadlineString);
         const timeDiff = deadline.getTime() - new Date().getTime();
-
         const daysLeft = Math.ceil(timeDiff / MS_PER_DAY);
 
-        Logger.log(
-          `Do dezaktywacji użytkownika ${user.primaryEmail} pozostało dni: ${daysLeft}`
-        );
+        // Notify if 14, 7 or 1 days are left
+        if (daysLeft === 14 || daysLeft === 7 || daysLeft === 1) {
+          notifyForDeactivation(user, deadline);
+        }
 
-        if (daysLeft <= 0) {
+        if (timeDiff <= 0) {
           try {
-            // TODO
-            //AdminDirectory.Users!.patch({ suspended: true }, user.id!);
-            // TODO - Notify for deactivation
-
+            // Suspend and remove scheduled_for_deactivation relation
+            const currentRelations = user.relations || [];
+            const updatedRelations = currentRelations.filter(
+              (r: GoogleAppsScript.AdminDirectory.Schema.UserRelation) =>
+                r.customType !== "scheduled_for_deactivation"
+            );
+            AdminDirectory.Users!.patch(
+              { suspended: true, relations: updatedRelations },
+              user.id!
+            );
+            const template = HtmlService.createTemplateFromFile(
+              "deactivationPerformed"
+            );
+            template.mail = user.primaryEmail;
+            if (user.recoveryEmail) {
+              sendEmail(
+                user.recoveryEmail,
+                `Konto ${user.primaryEmail} zostało wyłączone`,
+                "",
+                { htmlBody: template.evaluate().getContent() }
+              );
+            }
+            deactivatedUsers.push(user.primaryEmail!);
             Logger.log(
               `[DEACTIVATED] User ${user.primaryEmail} has been suspended.`
             );
@@ -58,6 +78,12 @@ export function oldCleanup(): void {
       }
     }
   } while (pageToken);
+
+  sendEmail(
+    ADMIN_MAIL,
+    "oldCleanup: deaktywacje wykonane",
+    deactivatedUsers.join(" \n")
+  );
 }
 
 /**
@@ -72,7 +98,7 @@ export function oldCleanup(): void {
  *      - if no relation present, check if user was created more than 2 years ago
  * 3. Check if they have empty (or not present) "scheduled_for_deactivation" relation (meaning not scheduled yet)
  * 4. Empty the superior relation
- * 5. Set the "scheduled_for_deactivation" relation to DEACTIVATION_OFFSET
+ * 5. Set the "scheduled_for_deactivation" relation
  * 6. Notify the user
  */
 export function scheduleForDeactivation(): void {
@@ -85,6 +111,7 @@ export function scheduleForDeactivation(): void {
 
   let page: GoogleAppsScript.AdminDirectory.Schema.Users;
   let pageToken: string | undefined;
+  const scheduledUsers: string[] = [];
 
   do {
     // Get users from NONLEADERS_GROUP
@@ -125,57 +152,49 @@ export function scheduleForDeactivation(): void {
         user.relations,
         "scheduled_for_deactivation"
       );
-      if (warningRelation) {
-        // Account already scheduled for deactivation
-        continue;
-      }
 
-      const deadline = new Date(now.getTime() + DEACTIVATION_OFFSET_MS);
-
-      // Prepare Payload: Copy existing relations to avoid overwriting them
-      const currentRelations = user.relations || [];
-      const newRelations = [
-        ...currentRelations,
-        {
-          type: "custom",
-          customType: "scheduled_for_deactivation",
-          value: deadline.toISOString(),
-        },
-      ];
-
-      try {
-        // Use PATCH to only update the relations field
-        AdminDirectory.Users.patch({ relations: newRelations }, user.id);
-
-        //notifyForDeactivation(user, 30);
-
-        Logger.log(
-          `[SCHEDULED] User ${
-            user.primaryEmail
-          } marked for deactivation on ${deadline.toISOString()}`
-        );
-      } catch (error) {
-        Logger.log(`[ERROR] Failed to schedule ${user.primaryEmail}: ${error}`);
+      // Schedule only if account wasn't already scheduled for deactivation
+      if (!warningRelation) {
+        const deadline = new Date(now.getTime() + DEACTIVATION_OFFSET_MS);
+        scheduleUserForDeactivation(user, deadline);
+        notifyForDeactivation(user, deadline);
       }
     }
 
     pageToken = page.nextPageToken;
   } while (pageToken);
+
+  sendEmail(
+    ADMIN_MAIL,
+    "scheduleForDeactivation: użytkownicy zaplanowani do dezaktywacji",
+    scheduledUsers.join(" \n")
+  );
 }
 
 function notifyForDeactivation(
   user: GoogleAppsScript.AdminDirectory.Schema.User,
-  days: number
+  deadline: Date
 ): void {
   if (!user.primaryEmail) {
     Logger.log(`Skipping user due to missing email: ${JSON.stringify(user)}`);
     return;
   }
+
+  const timeDiff = deadline.getTime() - new Date().getTime();
+  const days = Math.ceil(timeDiff / MS_PER_DAY);
+
+  if (days < 1) {
+    Logger.log(
+      `Skipping notification for user ${user.primaryEmail} as deadline has passed`
+    );
+    return;
+  }
+
   const deactivationNoticeTemplate =
     HtmlService.createTemplateFromFile("deactivationNotice");
   deactivationNoticeTemplate.mail = user.primaryEmail;
   deactivationNoticeTemplate.days = days === 1 ? "1 dzień" : `${days} dni`;
-  deactivationNoticeTemplate.verificationLink = `${PROXY_URL}/confirm-zhr.html?id=${user.id}&scope=directory`;
+  deactivationNoticeTemplate.verificationLink = `${PROXY_URL}/confirm-zhr.html?id=${user.id}`;
 
   sendEmail(
     [user.primaryEmail, user.recoveryEmail].join(","),
@@ -196,4 +215,46 @@ function getRelation(
       r.customType === key
   ) as GoogleAppsScript.AdminDirectory.Schema.UserRelation | undefined;
   return relation?.value;
+}
+
+function scheduleUserForDeactivation(
+  user: GoogleAppsScript.AdminDirectory.Schema.User,
+  deadline: Date
+): void {
+  const existingDeadline = getRelation(
+    user.relations,
+    "scheduled_for_deactivation"
+  );
+  if (existingDeadline) {
+    throw new Error(
+      `User ${user.primaryEmail} is already scheduled for deactivation on ${existingDeadline}`
+    );
+  }
+  const currentRelations = user.relations || [];
+  const newRelations = [
+    ...currentRelations,
+    {
+      type: "custom",
+      customType: "scheduled_for_deactivation",
+      value: deadline.toISOString(),
+    },
+  ];
+
+  try {
+    if (!AdminDirectory || !AdminDirectory.Users) {
+      throw new Error("AdminDirectory.Users is undefined");
+    }
+    if (!user.id) {
+      throw new Error(`User has no ID: ${JSON.stringify(user)}`);
+    }
+    AdminDirectory.Users.patch({ relations: newRelations }, user.id);
+
+    Logger.log(
+      `[SCHEDULED] User ${
+        user.primaryEmail
+      } marked for deactivation on ${deadline.toISOString()}`
+    );
+  } catch (error) {
+    Logger.log(`[ERROR] Failed to schedule ${user.primaryEmail}: ${error}`);
+  }
 }
