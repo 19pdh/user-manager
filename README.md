@@ -1,8 +1,8 @@
 # user manager
 
-Those scripts combine Google Forms, Sheets, Gmail and Admin panel together, to enable user creation 
+Those scripts combine Google Forms, Sheets, Gmail and Admin panel together, to enable user creation
 automatization. User registers using Forms, the data is passed to Sheets and mail is being
-sent to the superior (passed in form field). After the supierior confirms the validity of request, the 
+sent to the superior (passed in form field). After the supierior confirms the validity of request, the
 admin is notified via email and can click to approve new user creation request.
 
 ## Build
@@ -26,5 +26,7 @@ cd build
 ../utils/updateSheets.sh ../utils/sheets.json
 ```
 
-What's in the `sheets.json`? You need to pass id to the compliant Google Sheet document. 
+What's in the `sheets.json`? You need to pass id to the compliant Google Sheet document.
 Send mail request for template at: patryk.niedzwiedzinski at zhr.pl
+
+! After running the script go to the Google App Script > Deploy > Manage deployments > Edit > New version
