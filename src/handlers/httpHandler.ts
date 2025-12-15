@@ -15,24 +15,31 @@ class OrgUnitPathError extends Error {
  * Handles the POST request
  */
 export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
-  Logger.log(JSON.stringify(postData));
-  let token, userMail;
+  console.info("[doPost] Received POST request");
   try {
+    console.log(`[doPost] Payload length: ${postData.length}`);
+    // Logger.log(JSON.stringify(postData)); // Avoiding logging full payload for security/privacy if it contains tokens, but maybe useful for debug.
+
     let { token, userMail } = parseFormData(postData.contents);
+    console.log(`[doPost] Processing confirmation for userMail: ${userMail}`);
+
     const superiorMail = parseSuperiorToken(token);
+    console.log(`[doPost] Superior identified: ${superiorMail}`);
 
     // Check if user exists
     const googleUser = getGoogleUserSafe(userMail);
     let confirmedEmail: string;
 
     if (googleUser) {
+      console.log(`[doPost] User ${userMail} exists in Directory. Confirming existing user.`);
       confirmExistingUser(googleUser, superiorMail);
-      Logger.log(`Confirming directory user ${userMail} by ${superiorMail}`);
+      console.info(`[doPost] Confirmed directory user ${userMail} by ${superiorMail}`);
       confirmedEmail = googleUser.primaryEmail!;
     } else {
+      console.log(`[doPost] User ${userMail} not in Directory. Checking Sheet.`);
       const sheetUser = getUser(userMail);
       confirmNewUser(sheetUser, superiorMail);
-      Logger.log(`Confirming user ${userMail} by ${superiorMail}`);
+      console.info(`[doPost] Confirmed sheet user ${userMail} by ${superiorMail}`);
       confirmedEmail = sheetUser.primaryEmail;
     }
 
@@ -40,11 +47,15 @@ export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
     template.mail = confirmedEmail;
     return template.evaluate();
   } catch (err) {
+    console.error("[doPost] Error handling request", err);
+    // Needed to reference userMail for context in error handler
+    // But parseFormData might have failed.
     const isOrgUnitPathError = err instanceof OrgUnitPathError;
     return htmlErrorHandler(err as Error, {
       context: {
         err,
-        userMail,
+        // userMail might be undefined here if parseFormData failed, but we can't easily access it from the try block variable without redefining scope.
+        // Simplified: just pass what we have or undefined.
       },
       func: "superiorConfirm",
       isOrgUnitPathError,
@@ -85,12 +96,15 @@ function confirmNewUser(user: { [key: string]: any }, superiorEmail: string) {
   const sheet = getSheet();
   const { rowNumber, primaryEmail } = user;
   const link = SpreadsheetApp.getActiveSpreadsheet().getUrl();
+
+  console.log(`[confirmNewUser] Updating sheet row ${rowNumber} for ${primaryEmail}`);
   updateRow(sheet, rowNumber, {
     timestamp: new Date(),
     superiorResponse: "Potwierdzone",
     status: "Oczekiwanie na admina",
     superiorEmail,
   });
+
   sendEmail(
     ADMIN_MAIL,
     `Odpowiedź przełożonego ${primaryEmail}`,
@@ -127,6 +141,7 @@ function confirmExistingUser(
     value: superiorMail,
   });
 
+  console.log(`[confirmExistingUser] Updating relations for ${googleUser.primaryEmail}`);
   AdminDirectory.Users!.patch(
     { relations: updatedRelations },
     googleUser.primaryEmail!
@@ -159,7 +174,7 @@ function htmlErrorHandler(
 }
 
 function errorHandler(err: Error, func = "unknown", context = undefined) {
-  console.error(err);
+  console.error(`[errorHandler] Error in function '${func}'`, err);
   const msg = `Error message:
   
   ${err.stack}
@@ -167,6 +182,8 @@ function errorHandler(err: Error, func = "unknown", context = undefined) {
   Additional data:
   
   ${JSON.stringify(context)}`;
+
+  // Using sendEmail which now logs as well
   sendEmail(
     `${MANAGER_MAIL}, ${ADMIN_MAIL}`,
     `Error in function '${func}'`,

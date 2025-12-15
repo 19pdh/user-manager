@@ -18,15 +18,17 @@ export function getUser(mail: string): { [key: string]: any } {
 }
 
 export function deleteUser(mail: string) {
+  console.log(`[deleteUser] Attempting to delete user ${mail}`);
   const user = getUser(mail);
   const googleUser = getGoogleUser(mail);
   if (!googleUser.changePasswordAtNextLogin) {
+    console.warn(`[deleteUser] User ${mail} has 'changePasswordAtNextLogin' set to false. Skipping deletion.`);
     throw new Error(
       `User ${mail} has 'changePasswordAtNextLogin' set to false, will not delete it`
     );
   }
   const sheet = getSheet();
-  Logger.log(`Removing stale user ${mail}`);
+  console.log(`[deleteUser] Removing stale user ${mail} from Directory.`);
   if (AdminDirectory && AdminDirectory.Users) {
     AdminDirectory.Users.remove(mail);
   } else {
@@ -36,6 +38,7 @@ export function deleteUser(mail: string) {
   template.mail = mail;
   template.surveyLink = SURVEY_LINK;
   if (googleUser.recoveryEmail) {
+    console.log(`[deleteUser] Sending deletion notification to ${googleUser.recoveryEmail}`);
     sendEmail(
       googleUser.recoveryEmail,
       `Twoje konto ${mail} zostało usunięte`,
@@ -47,6 +50,7 @@ export function deleteUser(mail: string) {
     status: "Usunięto",
     exists: false,
   });
+  console.info(`[deleteUser] User ${mail} deleted and sheet updated.`);
 }
 
 export function getGoogleUser(
@@ -96,8 +100,10 @@ export function createUser(
   password: string,
   superiorEmail: string
 ) {
+  console.log(`[createUser] Creating user ${primaryEmail} (OrgUnit: ${orgUnitPath}, Manager: ${superiorEmail})`);
   const exists = userExists(primaryEmail);
   if (exists) {
+    console.error(`[createUser] User ${primaryEmail} already exists.`);
     throw new Error(`User ${primaryEmail} already exists!`);
   }
   const user = {
@@ -138,6 +144,7 @@ export function createUser(
   };
   if (AdminDirectory && AdminDirectory.Users) {
     AdminDirectory.Users.insert(user);
+    console.info(`[createUser] User ${primaryEmail} created successfully.`);
   } else {
     throw new Error("AdminDirectory.Users is undefined");
   }
@@ -161,6 +168,7 @@ export function updateGroup(mailList: string[]): {
   removed: string[];
   notFound: string[];
 } {
+  console.info(`[updateGroup] Starting group update with ${mailList.length} emails.`);
   if (AdminDirectory && AdminDirectory.Users) {
     const userList = [];
     const notFound = [];
@@ -175,12 +183,13 @@ export function updateGroup(mailList: string[]): {
           if (user.orgUnitPath !== LEADERS_GROUP) {
             AdminDirectory.Users.patch({ orgUnitPath: LEADERS_GROUP }, user.id);
             added.push(user.primaryEmail as string);
-            Logger.log(`User ${user.primaryEmail} has been added to the group`);
+            console.log(`[updateGroup] Added ${user.primaryEmail} to group.`);
           }
         } else {
           throw new Error(`User not found: ${mail}`);
         }
       } catch (error) {
+        console.warn(`[updateGroup] User ${mail} not found or error accessing: ${error}`);
         notFound.push(mail);
       }
     }
@@ -215,18 +224,18 @@ export function updateGroup(mailList: string[]): {
                   },
                   user.id
                 );
-                Logger.log(
-                  `User ${user.primaryEmail} has been removed from the group`
+                console.log(
+                  `[updateGroup] Removed ${user.primaryEmail} from group (moved to reserve).`
                 );
                 removed.push(user.primaryEmail as string);
               } catch (error) {
-                Logger.log(`Couldn't reassign user ${user.primaryEmail}`);
+                console.error(`[updateGroup] Failed to reassign user ${user.primaryEmail}`, error);
               }
             }
           }
         }
       } else {
-        Logger.log("No users found.");
+        console.log("[updateGroup] No existing users found in group to check for removal.");
       }
 
       pageToken = page.nextPageToken;

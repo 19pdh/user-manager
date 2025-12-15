@@ -8,6 +8,7 @@ const DEACTIVATION_OFFSET_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
  * Worker function that checks if user should be deactivated and notifies beforehand
  */
 export function oldCleanup(): void {
+  console.info("[oldCleanup] Started cleanup/deactivation check");
   if (!AdminDirectory || !AdminDirectory.Users) {
     throw new Error("AdminDirectory.Users is undefined");
   }
@@ -26,6 +27,7 @@ export function oldCleanup(): void {
     });
 
     const users = page.users || [];
+    console.log(`[oldCleanup] Checking ${users.length} users in current page.`);
 
     for (let user of users) {
       const deadlineString = getRelation(
@@ -40,11 +42,13 @@ export function oldCleanup(): void {
 
         // Notify if 14, 7 or 1 days are left
         if (daysLeft === 14 || daysLeft === 7 || daysLeft === 1) {
+          console.log(`[oldCleanup] Notifying user ${user.primaryEmail}, days left: ${daysLeft}`);
           notifyForDeactivation(user, deadline);
         }
 
         if (timeDiff <= 0) {
           try {
+            console.log(`[oldCleanup] Deactivating user ${user.primaryEmail}`);
             // Suspend and remove scheduled_for_deactivation relation
             const currentRelations = user.relations || [];
             const updatedRelations = currentRelations.filter(
@@ -68,11 +72,11 @@ export function oldCleanup(): void {
               );
             }
             deactivatedUsers.push(user.primaryEmail!);
-            Logger.log(
-              `[DEACTIVATED] User ${user.primaryEmail} has been suspended.`
+            console.log(
+              `[oldCleanup] User ${user.primaryEmail} has been suspended.`
             );
           } catch (e) {
-            Logger.log(`[ERROR] Failed to suspend ${user.primaryEmail}: ${e}`);
+            console.error(`[oldCleanup] Failed to suspend ${user.primaryEmail}`, e);
           }
         }
       }
@@ -86,25 +90,17 @@ export function oldCleanup(): void {
       "oldCleanup: deaktywacje wykonane",
       deactivatedUsers.join(" \n")
     );
+    console.info("[oldCleanup] Deactivation summary sent.");
   }
+  console.info("[oldCleanup] Cleanup completed.");
 }
 
 /**
  * Yearly cleanup of users who left the organization
- * During the cleanup process, all users in NONLEADERS_GROUP that were confirmed more than 2 years ago
- * will be asked for reconfirmation from their superior. If no confirmation is received within 30 days,
- * the account will be deactivated.
- *
- * 1. Query all users in NONLEADERS_GROUP that are not suspended
- * 2. Filter only users that:
- *      - have relation of type "confirmation_date" and with value date older than 2 years
- *      - if no relation present, check if user was created more than 2 years ago
- * 3. Check if they have empty (or not present) "scheduled_for_deactivation" relation (meaning not scheduled yet)
- * 4. Empty the superior relation
- * 5. Set the "scheduled_for_deactivation" relation
- * 6. Notify the user
+ * ...
  */
 export function scheduleForDeactivation(): void {
+  console.info("[scheduleForDeactivation] Started scheduling checks");
   if (!AdminDirectory || !AdminDirectory.Users) {
     throw new Error("AdminDirectory.Users is undefined");
   }
@@ -127,6 +123,7 @@ export function scheduleForDeactivation(): void {
     });
 
     const users = page.users;
+    console.log(`[scheduleForDeactivation] Processing batch of ${users?.length || 0} users.`);
 
     const usersForReconfirmation =
       users?.filter((user: GoogleAppsScript.AdminDirectory.Schema.User) => {
@@ -144,9 +141,11 @@ export function scheduleForDeactivation(): void {
         return timeSinceCreation > TWO_YEARS_MS;
       }) || [];
 
+    console.log(`[scheduleForDeactivation] Found ${usersForReconfirmation.length} users for potential reconfirmation in this batch.`);
+
     for (const user of usersForReconfirmation) {
       if (!user.id || !user.primaryEmail) {
-        Logger.log(`Skipping user due to missing id: ${JSON.stringify(user)}`);
+        console.warn(`[scheduleForDeactivation] Skipping user due to missing id/email: ${JSON.stringify(user)}`);
         continue;
       }
 
@@ -159,8 +158,10 @@ export function scheduleForDeactivation(): void {
       // Schedule only if account wasn't already scheduled for deactivation
       if (!warningRelation) {
         const deadline = new Date(now.getTime() + DEACTIVATION_OFFSET_MS);
+        console.log(`[scheduleForDeactivation] Scheduling ${user.primaryEmail} for deactivation on ${deadline}`);
         scheduleUserForDeactivation(user, deadline);
         notifyForDeactivation(user, deadline);
+        scheduledUsers.push(user.primaryEmail);
       }
     }
 
@@ -173,7 +174,9 @@ export function scheduleForDeactivation(): void {
       "scheduleForDeactivation: użytkownicy zaplanowani do dezaktywacji",
       scheduledUsers.join(" \n")
     );
+    console.info("[scheduleForDeactivation] Summary email sent.");
   }
+  console.info("[scheduleForDeactivation] Completed.");
 }
 
 function notifyForDeactivation(
@@ -181,7 +184,7 @@ function notifyForDeactivation(
   deadline: Date
 ): void {
   if (!user.primaryEmail) {
-    Logger.log(`Skipping user due to missing email: ${JSON.stringify(user)}`);
+    console.warn(`[notifyForDeactivation] Skipping user due to missing email: ${JSON.stringify(user)}`);
     return;
   }
 
@@ -189,12 +192,13 @@ function notifyForDeactivation(
   const days = Math.ceil(timeDiff / MS_PER_DAY);
 
   if (days < 1) {
-    Logger.log(
-      `Skipping notification for user ${user.primaryEmail} as deadline has passed`
+    console.log(
+      `[notifyForDeactivation] Skipping notification for user ${user.primaryEmail} as deadline has passed`
     );
     return;
   }
 
+  console.log(`[notifyForDeactivation] Sending notice to ${user.primaryEmail}, days left: ${days}`);
   const deactivationNoticeTemplate =
     HtmlService.createTemplateFromFile("deactivationNotice");
   deactivationNoticeTemplate.mail = user.primaryEmail;
@@ -249,12 +253,12 @@ function scheduleUserForDeactivation(
     }
     AdminDirectory.Users.patch({ relations: newRelations }, user.id);
 
-    Logger.log(
-      `[SCHEDULED] User ${
+    console.log(
+      `[scheduleUserForDeactivation] User ${
         user.primaryEmail
       } marked for deactivation on ${deadline.toISOString()}`
     );
   } catch (error) {
-    Logger.log(`[ERROR] Failed to schedule ${user.primaryEmail}: ${error}`);
+    console.error(`[scheduleUserForDeactivation] Failed to schedule ${user.primaryEmail}`, error);
   }
 }

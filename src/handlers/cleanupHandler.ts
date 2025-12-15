@@ -71,14 +71,17 @@ function getFreshUsers(
  * @param {AdminDirectory.Schema.User} user User fetched with Google API
  */
 export function freshCleanup(): void {
+  console.info("[freshCleanup] Started stale account cleanup");
   const sheet = getSheet();
   const users = getFreshUsers(sheet);
   let msg = "Usunięto użytkowników:\n\n";
   let removed = false;
 
+  console.log(`[freshCleanup] Found ${users.length} fresh users to check.`);
+
   for (const user of users) {
     if (isAccountInactive(user) && user.primaryEmail) {
-      console.log(`To delete ${user.primaryEmail}`);
+      console.log(`[freshCleanup] Deleting inactive user: ${user.primaryEmail}`);
       deleteUser(user.primaryEmail);
       msg += `- ${user.primaryEmail}\n`;
       removed = true;
@@ -86,12 +89,16 @@ export function freshCleanup(): void {
   }
 
   if (removed) {
+    console.info("[freshCleanup] Users removed, sending summary email.");
     sendEmail(
       ADMIN_MAIL,
       "freshCleanup: usunięto nieaktywnych użytkowników",
       msg
     );
+  } else {
+    console.info("[freshCleanup] No users removed.");
   }
+  console.info("[freshCleanup] Cleanup completed.");
 }
 
 /**
@@ -104,5 +111,9 @@ function isAccountInactive(
   if (!user.lastLoginTime) {
     return false;
   }
-  return user.lastLoginTime === "1970-01-01T00:00:00.000Z";
+  const inactive = user.lastLoginTime === "1970-01-01T00:00:00.000Z";
+  if (inactive) {
+      console.log(`[isAccountInactive] User ${user.primaryEmail} is inactive (lastLoginTime: ${user.lastLoginTime})`);
+  }
+  return inactive;
 }

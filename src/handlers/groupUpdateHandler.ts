@@ -9,10 +9,12 @@ export function onOpen() {
 }
 
 export function groupUpdateHandler() {
+    console.info("[groupUpdateHandler] Triggered manually.");
     const ui = SpreadsheetApp.getUi();
     const selection = SpreadsheetApp.getActiveRange();
 
     if (!selection) {
+        console.warn("[groupUpdateHandler] No selection.");
         ui.alert('Error', 'Zaznacz komórki z adresami email', ui.ButtonSet.OK);
         return;
     }
@@ -26,6 +28,8 @@ export function groupUpdateHandler() {
             return emailRegex.test(mail);
         });
 
+    console.log(`[groupUpdateHandler] Found ${mailList.length} valid emails in selection.`);
+
     if (mailList.length === 0) {
         ui.alert('Error', 'Nie znaleziono poprawnych adresów email w zaznaczeniu', ui.ButtonSet.OK);
         return;
@@ -34,8 +38,10 @@ export function groupUpdateHandler() {
 
     const response = ui.alert('Jesteś pewien?', `Grupa ${LEADERS_GROUP} zostanie zaktualizowana z ${mailList.length} adresów email:\n${mailList.join(', ')}`, ui.ButtonSet.YES_NO);
     if (response === ui.Button.YES) {
+        console.info("[groupUpdateHandler] User confirmed update.");
         try {
             const result = updateGroup(mailList);
+            console.info(`[groupUpdateHandler] Update complete. Added: ${result.added.length}, Removed: ${result.removed.length}, NotFound: ${result.notFound.length}`);
             ui.alert(
                 'Zakończono dodawanie',
                 `Aktualizacja grupy zakończona:
@@ -48,9 +54,11 @@ export function groupUpdateHandler() {
                 ui.ButtonSet.OK
             );
         } catch (error) {
+            console.error("[groupUpdateHandler] Error during update", error);
             ui.alert('Error', (error as Error).toString(), ui.ButtonSet.OK);
 
         }
+    } else {
+        console.info("[groupUpdateHandler] User cancelled update.");
     }
 }
-

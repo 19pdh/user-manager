@@ -27,11 +27,18 @@ export function sendEmail(
   body: string,
   options?: {}
 ) {
-  GmailApp.sendEmail(to, title, body, {
-    ...(options || {}),
-    from: ADMIN_MAIL,
-    name: ADMIN_NAME,
-  });
+  console.log(`[sendEmail] Sending email to: ${to}, subject: "${title}"`);
+  try {
+    GmailApp.sendEmail(to, title, body, {
+      ...(options || {}),
+      from: ADMIN_MAIL,
+      name: ADMIN_NAME,
+    });
+    console.log(`[sendEmail] Email sent successfully to ${to}`);
+  } catch (error) {
+    console.error(`[sendEmail] Failed to send email to ${to}`, error);
+    throw error;
+  }
 }
 
 /**
