@@ -48,7 +48,7 @@ function cleanupPendingRequests(): void {
         const { recoveryEmail, primaryEmail } = getRow(sheet, row);
         console.log(`Rejecting request for ${primaryEmail}`);
 
-        const template = HtmlService.createTemplateFromFile("request_refused");
+        const template = HtmlService.createTemplateFromFile("requestRefused");
         template.mail = primaryEmail;
         template.surveyLink = SURVEY_LINK;
 
