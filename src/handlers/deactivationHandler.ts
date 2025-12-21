@@ -8,6 +8,7 @@ const DEACTIVATION_OFFSET_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
  * Worker function that checks if user should be deactivated and notifies beforehand
  */
 export function oldCleanup(): void {
+  console.info("[oldCleanup] Starting deactivation cleanup job");
   if (!AdminDirectory || !AdminDirectory.Users) {
     throw new Error("AdminDirectory.Users is undefined");
   }
@@ -68,11 +69,13 @@ export function oldCleanup(): void {
               );
             }
             deactivatedUsers.push(user.primaryEmail!);
-            Logger.log(
-              `[DEACTIVATED] User ${user.primaryEmail} has been suspended.`
+            console.log(
+              `[oldCleanup] User ${user.primaryEmail} has been suspended.`
             );
           } catch (e) {
-            Logger.log(`[ERROR] Failed to suspend ${user.primaryEmail}: ${e}`);
+            console.error(
+              `[oldCleanup] Failed to suspend ${user.primaryEmail}: ${e}`
+            );
           }
         }
       }
@@ -87,6 +90,7 @@ export function oldCleanup(): void {
       deactivatedUsers.join(" \n")
     );
   }
+  console.info("[oldCleanup] Finished deactivation cleanup job");
 }
 
 /**
@@ -105,6 +109,7 @@ export function oldCleanup(): void {
  * 6. Notify the user
  */
 export function scheduleForDeactivation(): void {
+  console.info("[scheduleForDeactivation] Starting scheduling job");
   if (!AdminDirectory || !AdminDirectory.Users) {
     throw new Error("AdminDirectory.Users is undefined");
   }
@@ -146,7 +151,11 @@ export function scheduleForDeactivation(): void {
 
     for (const user of usersForReconfirmation) {
       if (!user.id || !user.primaryEmail) {
-        Logger.log(`Skipping user due to missing id: ${JSON.stringify(user)}`);
+        console.log(
+          `[scheduleForDeactivation] Skipping user due to missing id: ${JSON.stringify(
+            user
+          )}`
+        );
         continue;
       }
 
@@ -174,6 +183,7 @@ export function scheduleForDeactivation(): void {
       scheduledUsers.join(" \n")
     );
   }
+  console.info("[scheduleForDeactivation] Finished scheduling job");
 }
 
 function notifyForDeactivation(
@@ -181,7 +191,11 @@ function notifyForDeactivation(
   deadline: Date
 ): void {
   if (!user.primaryEmail) {
-    Logger.log(`Skipping user due to missing email: ${JSON.stringify(user)}`);
+    console.log(
+      `[notifyForDeactivation] Skipping user due to missing email: ${JSON.stringify(
+        user
+      )}`
+    );
     return;
   }
 
@@ -189,8 +203,8 @@ function notifyForDeactivation(
   const days = Math.ceil(timeDiff / MS_PER_DAY);
 
   if (days < 1) {
-    Logger.log(
-      `Skipping notification for user ${user.primaryEmail} as deadline has passed`
+    console.log(
+      `[notifyForDeactivation] Skipping notification for user ${user.primaryEmail} as deadline has passed`
     );
     return;
   }
@@ -249,12 +263,14 @@ function scheduleUserForDeactivation(
     }
     AdminDirectory.Users.patch({ relations: newRelations }, user.id);
 
-    Logger.log(
-      `[SCHEDULED] User ${
+    console.log(
+      `[scheduleUserForDeactivation] User ${
         user.primaryEmail
       } marked for deactivation on ${deadline.toISOString()}`
     );
   } catch (error) {
-    Logger.log(`[ERROR] Failed to schedule ${user.primaryEmail}: ${error}`);
+    console.error(
+      `[scheduleUserForDeactivation] Failed to schedule ${user.primaryEmail}: ${error}`
+    );
   }
 }

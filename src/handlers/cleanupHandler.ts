@@ -1,5 +1,11 @@
 import { ADMIN_MAIL, SURVEY_LINK } from "../config";
-import { labelToColumnLetter, getField, getSheet, updateRow, getRow } from "../lib/sheet";
+import {
+  labelToColumnLetter,
+  getField,
+  getSheet,
+  updateRow,
+  getRow,
+} from "../lib/sheet";
 import { getGoogleUser, deleteUser } from "../lib/user";
 import { sendEmail } from "../lib/utils";
 
@@ -31,6 +37,7 @@ function isSevenDaysAgo(dateToCheck: Date): boolean {
 }
 
 function cleanupPendingRequests(): void {
+  console.info("[cleanupPendingRequests] Cleaning up pending requests");
   const sheet = getSheet();
   const columnA1Notation = labelToColumnLetter(sheet, "timestamp");
   const range = sheet.getRange(`${columnA1Notation}:${columnA1Notation}`);
@@ -46,7 +53,9 @@ function cleanupPendingRequests(): void {
       const status = getField(sheet, row, "status");
       if (status === "Oczekiwanie na opiekuna") {
         const { recoveryEmail, primaryEmail } = getRow(sheet, row);
-        console.log(`Rejecting request for ${primaryEmail}`);
+        console.log(
+          `[cleanupPendingRequests] Rejecting request for ${primaryEmail}`
+        );
 
         const template = HtmlService.createTemplateFromFile("requestRefused");
         template.mail = primaryEmail;
@@ -65,26 +74,10 @@ function cleanupPendingRequests(): void {
       }
     }
   }
-}
 
-function getOldUsers(
-  sheet: GoogleAppsScript.Spreadsheet.Sheet
-): Array<GoogleAppsScript.AdminDirectory.Schema.User> {
-  const columnA1Notation = labelToColumnLetter(sheet, "exists");
-  const range = sheet.getRange(`${columnA1Notation}:${columnA1Notation}`);
-  const today = new Date();
-  const users = Array.from(
-    range
-      .getValues()
-      .map(([v]: any[]) => v)
-      .entries()
-      .filter(([row, exists]) => row > 1 && exists)
-      .map(([row, _]) => [row, getField(sheet, row + 1, "timestamp")])
-      .filter(([_, timestamp]) => dayDiff(timestamp, today) > 7)
-      .map(([row, _]) => getField(sheet, row + 1, "primaryEmail"))
-      .map((primaryEmail) => getGoogleUser(primaryEmail))
+  console.info(
+    "[cleanupPendingRequests] Finished cleaning up pending requests"
   );
-  return users;
 }
 
 /**
@@ -120,6 +113,7 @@ function getFreshUsers(
  * @param {AdminDirectory.Schema.User} user User fetched with Google API
  */
 export function freshCleanup(): void {
+  console.info("[freshCleanup] Starting fresh cleanup job");
   cleanupPendingRequests();
   const sheet = getSheet();
   const users = getFreshUsers(sheet);
@@ -128,12 +122,13 @@ export function freshCleanup(): void {
 
   for (const user of users) {
     if (isAccountInactive(user) && user.primaryEmail) {
-      console.log(`To delete ${user.primaryEmail}`);
+      console.log(`[freshCleanup] To delete ${user.primaryEmail}`);
       deleteUser(user.primaryEmail);
       msg += `- ${user.primaryEmail}\n`;
       removed = true;
     }
   }
+  console.info("[freshCleanup] Finished fresh cleanup job");
 
   if (removed) {
     sendEmail(

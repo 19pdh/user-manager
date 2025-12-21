@@ -39,7 +39,7 @@ function verifyJWT(jwt: string, keyId: string): object | null {
   }
   // Parse the JWT payload
   const payload = KJUR.jws.JWS.parse(jwt).payloadObj as object;
-  Logger.log("JWT is valid");
-  Logger.log(JSON.stringify(payload));
+  console.log("[verifyJWT] JWT is valid");
+  console.log(`[verifyJWT] Payload: ${JSON.stringify(payload)}`);
   return payload;
 }

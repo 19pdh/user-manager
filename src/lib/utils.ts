@@ -27,6 +27,7 @@ export function sendEmail(
   body: string,
   options?: {}
 ) {
+  console.log(`[sendEmail] Sending email to ${to} with title '${title}'`);
   GmailApp.sendEmail(to, title, body, {
     ...(options || {}),
     from: ADMIN_MAIL,

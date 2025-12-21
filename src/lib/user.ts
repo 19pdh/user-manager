@@ -18,6 +18,7 @@ export function getUser(mail: string): { [key: string]: any } {
 }
 
 export function deleteUser(mail: string) {
+  console.info(`[deleteUser] Removing stale user ${mail}`);
   const user = getUser(mail);
   const googleUser = getGoogleUser(mail);
   if (!googleUser.changePasswordAtNextLogin) {
@@ -26,7 +27,6 @@ export function deleteUser(mail: string) {
     );
   }
   const sheet = getSheet();
-  Logger.log(`Removing stale user ${mail}`);
   if (AdminDirectory && AdminDirectory.Users) {
     AdminDirectory.Users.remove(mail);
   } else {
@@ -96,6 +96,7 @@ export function createUser(
   password: string,
   superiorEmail: string
 ) {
+  console.info(`[createUser] Creating user ${primaryEmail}`);
   const exists = userExists(primaryEmail);
   if (exists) {
     throw new Error(`User ${primaryEmail} already exists!`);
@@ -138,6 +139,7 @@ export function createUser(
   };
   if (AdminDirectory && AdminDirectory.Users) {
     AdminDirectory.Users.insert(user);
+    console.log(`[createUser] User ${primaryEmail} created successfully`);
   } else {
     throw new Error("AdminDirectory.Users is undefined");
   }
@@ -161,6 +163,7 @@ export function updateGroup(mailList: string[]): {
   removed: string[];
   notFound: string[];
 } {
+  console.info(`[updateGroup] Updating group with ${mailList.length} emails`);
   if (AdminDirectory && AdminDirectory.Users) {
     const userList = [];
     const notFound = [];
@@ -175,7 +178,9 @@ export function updateGroup(mailList: string[]): {
           if (user.orgUnitPath !== LEADERS_GROUP) {
             AdminDirectory.Users.patch({ orgUnitPath: LEADERS_GROUP }, user.id);
             added.push(user.primaryEmail as string);
-            Logger.log(`User ${user.primaryEmail} has been added to the group`);
+            console.log(
+              `[updateGroup] User ${user.primaryEmail} has been added to the group`
+            );
           }
         } else {
           throw new Error(`User not found: ${mail}`);
@@ -215,18 +220,20 @@ export function updateGroup(mailList: string[]): {
                   },
                   user.id
                 );
-                Logger.log(
-                  `User ${user.primaryEmail} has been removed from the group`
+                console.log(
+                  `[updateGroup] User ${user.primaryEmail} has been removed from the group`
                 );
                 removed.push(user.primaryEmail as string);
               } catch (error) {
-                Logger.log(`Couldn't reassign user ${user.primaryEmail}`);
+                console.error(
+                  `[updateGroup] Couldn't reassign user ${user.primaryEmail}`
+                );
               }
             }
           }
         }
       } else {
-        Logger.log("No users found.");
+        console.log("[updateGroup] No users found.");
       }
 
       pageToken = page.nextPageToken;

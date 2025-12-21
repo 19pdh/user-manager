@@ -17,6 +17,8 @@ export function onEdit({
     return;
   }
 
+  console.info("[onEdit] Processing edit event 'Zatwierdzono'");
+
   const column = range.getColumn();
   const row = range.getRow();
   if (column != 1) {
@@ -32,6 +34,7 @@ export function onEdit({
   const userToCreate = getRow(sheet, row);
 
   if (userToCreate.exists) {
+    console.log("[onEdit] User already exists, skipping creation");
     return;
   }
 

@@ -9,6 +9,7 @@ export function onOpen() {
 }
 
 export function groupUpdateHandler() {
+    console.info('[groupUpdateHandler] Starting group update from selection');
     const ui = SpreadsheetApp.getUi();
     const selection = SpreadsheetApp.getActiveRange();
 
@@ -36,6 +37,7 @@ export function groupUpdateHandler() {
     if (response === ui.Button.YES) {
         try {
             const result = updateGroup(mailList);
+            console.log(`[groupUpdateHandler] Update result: Added=${result.added.length}, Removed=${result.removed.length}, NotFound=${result.notFound.length}`);
             ui.alert(
                 'Zakończono dodawanie',
                 `Aktualizacja grupy zakończona:
@@ -48,9 +50,11 @@ export function groupUpdateHandler() {
                 ui.ButtonSet.OK
             );
         } catch (error) {
+            console.error(`[groupUpdateHandler] Error: ${error}`);
             ui.alert('Error', (error as Error).toString(), ui.ButtonSet.OK);
 
         }
     }
+    console.info('[groupUpdateHandler] Finished group update');
 }
 
