@@ -9,10 +9,8 @@ SCRIPT_ID="$1"
 TAG="$2"
 DATE=$(date +"%Y-%m-%d %H:%M")
 
-mkdir -p build
-
 # Create clasp.json
-cat <<EOF >build/.clasp.json
+cat <<EOF >.clasp.json
 {
   "scriptId": "$SCRIPT_ID",
   "rootDir": "$PWD"
