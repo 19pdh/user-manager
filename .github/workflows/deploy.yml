@@ -23,7 +23,10 @@ jobs:
         run: npm ci
 
       - name: Create .env file
-        run: echo "${{ secrets.ENV_FILE }}" > .env
+        env:
+          SECRET_ENV: ${{ secrets.ENV_FILE }}
+        run: |
+          echo "$SECRET_ENV" > .env
 
       - name: Setup Clasp credentials
         run: echo "${{ secrets.CLASPRC_JSON }}" > ~/.clasprc.json
