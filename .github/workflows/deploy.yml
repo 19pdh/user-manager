@@ -1,0 +1,45 @@
+name: Deploy to Google Apps Script
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "16"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env file
+        env:
+          SECRET_ENV: ${{ secrets.ENV_FILE }}
+        run: |
+          echo "$SECRET_ENV" > .env
+
+      - name: Create ~/.clasprc.json
+        env:
+          CLASP_SECRET: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          echo "$CLASP_SECRET" > ~/.clasprc.json
+
+          npx @google/clasp login --status
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy
+        run: |
+          cd build
+          ../utils/ci.sh "${{ secrets.SCRIPT_ID }}" "${{ github.ref_name }}"

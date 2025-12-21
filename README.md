@@ -29,4 +29,23 @@ cd build
 What's in the `sheets.json`? You need to pass id to the compliant Google Sheet document.
 Send mail request for template at: patryk.niedzwiedzinski at zhr.pl
 
-! After running the script go to the Google App Script > Deploy > Manage deployments > Edit > New version
+## Automatic Deployment (GitHub Actions)
+
+The project includes a GitHub Actions workflow to automate deployment upon pushing a new tag (e.g., `v1.0.0`).
+
+### Prerequisities
+
+You need to set up the following secrets in your GitHub repository settings:
+
+1.  **`CLASPRS_JSON`**:
+
+    - Login to Clasp locally: `npx clasp login`
+    - This will create a `~/.clasprc.json` file.
+    - Copy the content of this file and paste it as the secret value.
+
+2.  **`ENV_FILE`**:
+
+    - Content of your `.env` file (see `example.env`).
+
+3.  **`SCRIPT_ID`**:
+    - ID of script in script.google.com to deploy to (Sheets > Addons > Apps Script > id in url)

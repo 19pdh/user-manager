@@ -8,7 +8,8 @@ import {
   scheduleForDeactivation,
 } from "./handlers/deactivationHandler";
 
-export {
+// tslint:disable-next-line:no-unused-variable
+const userManagerHandlers = {
   // send emails after form submit
   onFormSubmit,
   // HTTP request handler - superior confirmation
