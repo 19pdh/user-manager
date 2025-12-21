@@ -15,7 +15,8 @@ class OrgUnitPathError extends Error {
  * Handles the POST request
  */
 export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
-  Logger.log(JSON.stringify(postData));
+  console.info("[doPost] Received POST request");
+  console.log(`[doPost] Data: ${JSON.stringify(postData)}`);
   let token, userMail;
   try {
     let { token, userMail } = parseFormData(postData.contents);
@@ -27,12 +28,14 @@ export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
 
     if (googleUser) {
       confirmExistingUser(googleUser, superiorMail);
-      Logger.log(`Confirming directory user ${userMail} by ${superiorMail}`);
+      console.log(
+        `[doPost] Confirming directory user ${userMail} by ${superiorMail}`
+      );
       confirmedEmail = googleUser.primaryEmail!;
     } else {
       const sheetUser = getUser(userMail);
       confirmNewUser(sheetUser, superiorMail);
-      Logger.log(`Confirming user ${userMail} by ${superiorMail}`);
+      console.log(`[doPost] Confirming user ${userMail} by ${superiorMail}`);
       confirmedEmail = sheetUser.primaryEmail;
     }
 
@@ -159,7 +162,7 @@ function htmlErrorHandler(
 }
 
 function errorHandler(err: Error, func = "unknown", context = undefined) {
-  console.error(err);
+  console.error(`[errorHandler] Error in function '${func}': ${err}`);
   const msg = `Error message:
   
   ${err.stack}

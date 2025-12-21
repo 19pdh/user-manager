@@ -7,6 +7,7 @@ import { PROXY_URL } from "../config";
  * Handles the event
  */
 export function onFormSubmit(e: GoogleAppsScript.Events.SheetsOnFormSubmit) {
+  console.info("[onFormSubmit] Started handling form submission");
   const row = e.range.getRow();
   const sheet = getSheet();
   let { name, surname, troupName, superiorEmail, primaryEmail } = getRow(
@@ -24,6 +25,7 @@ export function onFormSubmit(e: GoogleAppsScript.Events.SheetsOnFormSubmit) {
     primaryEmail,
     isUnit: !!troupName,
   });
+  console.info("[onFormSubmit] Finished handling form submission");
 }
 
 /**

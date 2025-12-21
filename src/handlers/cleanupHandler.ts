@@ -71,6 +71,7 @@ function getFreshUsers(
  * @param {AdminDirectory.Schema.User} user User fetched with Google API
  */
 export function freshCleanup(): void {
+  console.info("[freshCleanup] Starting fresh cleanup job");
   const sheet = getSheet();
   const users = getFreshUsers(sheet);
   let msg = "Usunięto użytkowników:\n\n";
@@ -78,12 +79,13 @@ export function freshCleanup(): void {
 
   for (const user of users) {
     if (isAccountInactive(user) && user.primaryEmail) {
-      console.log(`To delete ${user.primaryEmail}`);
+      console.log(`[freshCleanup] To delete ${user.primaryEmail}`);
       deleteUser(user.primaryEmail);
       msg += `- ${user.primaryEmail}\n`;
       removed = true;
     }
   }
+  console.info("[freshCleanup] Finished fresh cleanup job");
 
   if (removed) {
     sendEmail(
