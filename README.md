@@ -44,4 +44,8 @@ You need to set up the following secrets in your GitHub repository settings:
     - Copy the content of this file and paste it as the secret value.
 
 2.  **`ENV_FILE`**:
+
     - Content of your `.env` file (see `example.env`).
+
+3.  **`SCRIPT_ID`**:
+    - ID of script in script.google.com to deploy to (Sheets > Addons > Apps Script > id in url)

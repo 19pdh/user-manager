@@ -42,4 +42,4 @@ jobs:
       - name: Deploy
         run: |
           cd build
-          ../utils/ci.sh "${{ github.ref_name }}"
+          ../utils/ci.sh "${{ secrets.SCRIPT_ID }}" "${{ github.ref_name }}"

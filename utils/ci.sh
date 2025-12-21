@@ -5,8 +5,17 @@
 # CI/CD script that pushes code and updates deployments for 
 # the current project. Assumes that clasp is configured.
 
-TAG="$1"
+SCRIPT_ID="$1"
+TAG="$2"
 DATE=$(date +"%Y-%m-%d %H:%M")
+
+# Create clasp.json
+cat <<EOF >.clasp.json
+{
+  "scriptId": "$SCRIPT_ID",
+  "rootDir": "$PWD"
+}
+EOF
 
 # Push code
 echo "Pushing code..."
@@ -38,7 +47,7 @@ echo "Updating existing deployments..."
 for id in $DEPLOYMENT_IDS; do
     echo "Redeploying deployment ID: $id"
     APP_URL="https://script.google.com/macros/s/$id/exec"
-    npm run build #TODO: inject APP_URL into build
+    #npm run build #TODO: inject APP_URL into build
     #TODO: deploy confirm-zhr.html to FTP
     npx clasp deploy -i "$id" -d "$DESCRIPTION"
 done
