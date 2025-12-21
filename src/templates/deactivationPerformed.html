@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Potwierdzenie konta <?= mail ?></title>
+    <title>Konto <?= mail ?> zostało wyłączone</title>
     <style>
       body {
         margin: 0;
@@ -50,13 +50,19 @@
   <body>
     <div class="container">
       <div class="header">
-        <h1>Sukces!</h1>
+        <h1>
+          Konto
+          <a href="mailto:<?= mail ?>" style="color: #fff"><?= mail ?></a>
+          zostało wyłączone
+        </h1>
       </div>
       <div class="content">
         <p>
-          Konto
-          <?= mail ?>
-          zostało potwierdzone.
+          Nie dostaliśmy potwierdzenia od Twojego przełożonego, dlatego Twoje
+          konto @zhr.pl zostało wyłączone. Jeśli uważasz, że to pomyłka,
+          skontaktuj się z nami pod adresem
+          <a href="mailto:admin.wlkp@zhr.pl">admin.wlkp@zhr.pl</a> (po prostu
+          odpowiedz na tego maila).
         </p>
         <p></p>
       </div>

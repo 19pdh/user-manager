@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Potwierdzenie konta <?= mail ?></title>
+    <title>[WYMAGANA AKCJA] Weryfikacja konta <?= mail ?></title>
     <style>
       body {
         margin: 0;
@@ -50,17 +50,38 @@
   <body>
     <div class="container">
       <div class="header">
-        <h1>Sukces!</h1>
+        <h1>
+          Weryfikacja Twojego konta
+          <a href="mailto:<?= mail ?>" style="color: #fff"><?= mail ?></a>
+        </h1>
       </div>
       <div class="content">
+        <h2>Czuwaj!</h2>
         <p>
-          Konto
-          <?= mail ?>
-          zostało potwierdzone.
+          W ramach corocznego spisu weryfikujemy konta mailowe w domenie zhr.pl.
+          Odzywamy się do Ciebie, żeby sprawdzić, czy nadal potrzebujesz dostępu
+          do konta
+          <strong><?= mail ?></strong>.
         </p>
         <p></p>
+        <p>
+          Jeżeli jesteś aktywnym członkiem ZHR, przekaż ten mail do swojego
+          przełożonego (musi to być instruktor), aby kliknął poniższy przycisk i
+          potwierdził aktywność Twojego konta:
+        </p>
+        <a href="<?= verificationLink ?>" class="button" style="color: #fff"
+          >Potwierdzam!</a
+        >
+        <hr />
+        <p>
+          ❗Na potwierdzenie konta masz
+          <?= days ?>. Po tym czasie konto zostanie wyłączone.❗
+        </p>
+        <p>
+          Jeśli uważasz że coś się nie zgadza, pisz śmiało na admin.wlkp@zhr.pl
+          (po prostu odpowiedz na tego maila).
+        </p>
       </div>
-
       <div class="footer">
         <p>Zespół IT ZHR Okręg Wielkopolski</p>
       </div>

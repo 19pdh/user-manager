@@ -1,5 +1,6 @@
 .clasp.json
 utils/sheets.json
+utils/prod.json
 node_modules
 .env
 
