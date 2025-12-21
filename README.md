@@ -1,8 +1,8 @@
 # user manager
 
-Those scripts combine Google Forms, Sheets, Gmail and Admin panel together, to enable user creation 
+Those scripts combine Google Forms, Sheets, Gmail and Admin panel together, to enable user creation
 automatization. User registers using Forms, the data is passed to Sheets and mail is being
-sent to the superior (passed in form field). After the supierior confirms the validity of request, the 
+sent to the superior (passed in form field). After the supierior confirms the validity of request, the
 admin is notified via email and can click to approve new user creation request.
 
 ## Build
@@ -26,5 +26,22 @@ cd build
 ../utils/updateSheets.sh ../utils/sheets.json
 ```
 
-What's in the `sheets.json`? You need to pass id to the compliant Google Sheet document. 
+What's in the `sheets.json`? You need to pass id to the compliant Google Sheet document.
 Send mail request for template at: patryk.niedzwiedzinski at zhr.pl
+
+## Automatic Deployment (GitHub Actions)
+
+The project includes a GitHub Actions workflow to automate deployment upon pushing a new tag (e.g., `v1.0.0`).
+
+### Prerequisities
+
+You need to set up the following secrets in your GitHub repository settings:
+
+1.  **`CLASPRS_JSON`**:
+
+    - Login to Clasp locally: `npx clasp login`
+    - This will create a `~/.clasprc.json` file.
+    - Copy the content of this file and paste it as the secret value.
+
+2.  **`ENV_FILE`**:
+    - Content of your `.env` file (see `example.env`).
