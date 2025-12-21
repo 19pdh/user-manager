@@ -1,12 +1,12 @@
 {
   "name": "user-manager",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "User manager of Google Workspace using Google App Script",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "source ./.env && rollup --config",
-    "postbuild": "cp src/templates/*.html build && sed -i '/exports/d' build/index.js"
+    "build": "rollup --config",
+    "postbuild": "cp src/templates/*.html build"
   },
   "repository": {
     "type": "git",

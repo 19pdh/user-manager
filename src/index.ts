@@ -3,8 +3,13 @@ import { doPost } from "./handlers/httpHandler";
 import { onEdit } from "./handlers/editHandler";
 import { freshCleanup } from "./handlers/cleanupHandler";
 import { onOpen, groupUpdateHandler } from "./handlers/groupUpdateHandler";
+import {
+  oldCleanup,
+  scheduleForDeactivation,
+} from "./handlers/deactivationHandler";
 
-export {
+// tslint:disable-next-line:no-unused-variable
+const userManagerHandlers = {
   // send emails after form submit
   onFormSubmit,
   // HTTP request handler - superior confirmation
@@ -16,4 +21,8 @@ export {
   // Google Sheets onOpen handler - update leaders group
   onOpen,
   groupUpdateHandler,
+  // CRON job - remove users scheduled for deactivation
+  oldCleanup,
+  // CRON job - schedule users for deactivation
+  scheduleForDeactivation,
 };
