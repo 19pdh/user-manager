@@ -1,5 +1,5 @@
-import { ADMIN_MAIL } from "../config";
-import { labelToColumnLetter, getField, getSheet } from "../lib/sheet";
+import { ADMIN_MAIL, SURVEY_LINK } from "../config";
+import { labelToColumnLetter, getField, getSheet, updateRow, getRow } from "../lib/sheet";
 import { getGoogleUser, deleteUser } from "../lib/user";
 import { sendEmail } from "../lib/utils";
 
@@ -16,6 +16,55 @@ function dayDiff(date1: Date, date2: Date): number {
   const diffTime = Math.abs(date2.getTime() - date1.getTime());
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   return diffDays;
+}
+
+function isSevenDaysAgo(dateToCheck: Date): boolean {
+  const today = new Date();
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(today.getDate() - 7);
+
+  return (
+    dateToCheck.getFullYear() === sevenDaysAgo.getFullYear() &&
+    dateToCheck.getMonth() === sevenDaysAgo.getMonth() &&
+    dateToCheck.getDate() === sevenDaysAgo.getDate()
+  );
+}
+
+function cleanupPendingRequests(): void {
+  const sheet = getSheet();
+  const columnA1Notation = labelToColumnLetter(sheet, "timestamp");
+  const range = sheet.getRange(`${columnA1Notation}:${columnA1Notation}`);
+  const values = range.getValues().map(([v]: any[]) => v);
+
+  for (let i = 1; i < values.length; i++) {
+    const timestamp = values[i];
+    if (!timestamp) continue;
+    const date = new Date(timestamp);
+
+    if (isSevenDaysAgo(date)) {
+      const row = i + 1;
+      const status = getField(sheet, row, "status");
+      if (status === "Oczekiwanie na opiekuna") {
+        const { recoveryEmail, primaryEmail } = getRow(sheet, row);
+        console.log(`Rejecting request for ${primaryEmail}`);
+
+        const template = HtmlService.createTemplateFromFile("requestRefused");
+        template.mail = primaryEmail;
+        template.surveyLink = SURVEY_LINK;
+
+        if (recoveryEmail) {
+          sendEmail(
+            recoveryEmail,
+            `Twój wniosek o konto @zhr.pl został odrzucony`,
+            "",
+            { htmlBody: template.evaluate().getContent() }
+          );
+        }
+
+        updateRow(sheet, row, { status: "Odmówiono" });
+      }
+    }
+  }
 }
 
 function getOldUsers(
@@ -71,6 +120,7 @@ function getFreshUsers(
  * @param {AdminDirectory.Schema.User} user User fetched with Google API
  */
 export function freshCleanup(): void {
+  cleanupPendingRequests();
   const sheet = getSheet();
   const users = getFreshUsers(sheet);
   let msg = "Usunięto użytkowników:\n\n";
