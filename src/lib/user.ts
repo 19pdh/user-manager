@@ -53,11 +53,11 @@ export function getGoogleUser(
   mail: string
 ): GoogleAppsScript.AdminDirectory.Schema.User {
   if (AdminDirectory && AdminDirectory.Users) {
-    const user = AdminDirectory.Users.get(mail);
-    if (!user) {
-      throw new Error("Coulnd't fetch google user");
+    try {
+      return AdminDirectory.Users.get(mail);
+    } catch (e) {
+      throw new Error(`Coulnd't fetch google user ${mail}: ${e}`);
     }
-    return user;
   } else {
     throw new Error("AdminDirectory.Users is undefined");
   }
