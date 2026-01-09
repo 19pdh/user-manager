@@ -1,6 +1,6 @@
 {
   "name": "user-manager",
-  "version": "1.2.0",
+  "version": "1.3.2",
   "description": "User manager of Google Workspace using Google App Script",
   "main": "index.js",
   "scripts": {
