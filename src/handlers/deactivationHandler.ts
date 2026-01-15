@@ -170,6 +170,7 @@ export function scheduleForDeactivation(): void {
         const deadline = new Date(now.getTime() + DEACTIVATION_OFFSET_MS);
         scheduleUserForDeactivation(user, deadline);
         notifyForDeactivation(user, deadline);
+        scheduledUsers.push(user.primaryEmail);
       }
     }
 
@@ -179,7 +180,7 @@ export function scheduleForDeactivation(): void {
   if (scheduledUsers.length) {
     sendEmail(
       ADMIN_MAIL,
-      "scheduleForDeactivation: użytkownicy zaplanowani do dezaktywacji",
+      `scheduleForDeactivation: użytkownicy zaplanowani do dezaktywacji (${scheduledUsers.length})`,
       scheduledUsers.join(" \n")
     );
   }
