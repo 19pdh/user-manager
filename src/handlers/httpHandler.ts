@@ -1,6 +1,6 @@
 import { getSheet, updateRow } from "../lib/sheet";
 import { getUser, getGoogleUser, getGoogleUserSafe } from "../lib/user";
-import { parseFormUrlEncoded, sendEmail } from "../lib/utils";
+import { parseFormUrlEncoded, sendEmail, renderTemplate } from "../lib/utils";
 import { verifyToken } from "../lib/auth";
 import { ADMIN_MAIL, MANAGER_MAIL, LEADERS_GROUP } from "../config";
 
@@ -39,9 +39,8 @@ export function doPost({ postData }: GoogleAppsScript.Events.DoPost) {
       confirmedEmail = sheetUser.primaryEmail;
     }
 
-    const template = HtmlService.createTemplateFromFile("superiorConfirmed");
-    template.mail = confirmedEmail;
-    return template.evaluate();
+    const title = `Potwierdzenie konta ${confirmedEmail}`;
+    return renderTemplate("superiorConfirmed", { mail: confirmedEmail }, title);
   } catch (err) {
     const isOrgUnitPathError = err instanceof OrgUnitPathError;
     return htmlErrorHandler(err as Error, {
@@ -135,14 +134,18 @@ function confirmExistingUser(
     googleUser.primaryEmail!
   );
 
-  const template = HtmlService.createTemplateFromFile("deactivationCancelled");
-  template.mail = googleUser.primaryEmail;
+  const subject = "Konto @zhr.pl zostało potwierdzone";
+  const htmlBody = renderTemplate(
+    "deactivationCancelled",
+    { mail: googleUser.primaryEmail },
+    subject
+  ).getContent();
 
   sendEmail(
     [googleUser.primaryEmail, googleUser.recoveryEmail].join(","),
-    "Konto @zhr.pl zostało potwierdzone",
+    subject,
     "",
-    { htmlBody: template.evaluate().getContent() }
+    { htmlBody }
   );
 }
 
@@ -155,10 +158,12 @@ function htmlErrorHandler(
   }: { context: any; func?: string; isOrgUnitPathError?: boolean }
 ) {
   errorHandler(err, func, context);
-  const template = HtmlService.createTemplateFromFile("superiorError");
-  template.error = err.message;
-  template.isOrgUnitPathError = isOrgUnitPathError;
-  return template.evaluate();
+  const title = "Wystąpił błąd";
+  return renderTemplate(
+    "superiorError",
+    { error: err.message, isOrgUnitPathError },
+    title
+  );
 }
 
 function errorHandler(err: Error, func = "unknown", context = undefined) {

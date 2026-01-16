@@ -1,4 +1,4 @@
-import { sendEmail } from "../lib/utils";
+import { sendEmail, renderTemplate } from "../lib/utils";
 import { ADMIN_MAIL, NONLEADERS_GROUP, PROXY_URL } from "../config";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -56,17 +56,16 @@ export function oldCleanup(): void {
               { suspended: true, relations: updatedRelations },
               user.id!
             );
-            const template = HtmlService.createTemplateFromFile(
-              "deactivationPerformed"
-            );
-            template.mail = user.primaryEmail;
             if (user.recoveryEmail) {
-              sendEmail(
-                user.recoveryEmail,
-                `Konto ${user.primaryEmail} zostało wyłączone`,
-                "",
-                { htmlBody: template.evaluate().getContent() }
-              );
+              const subject = `Konto ${user.primaryEmail} zostało wyłączone`;
+              const htmlBody = renderTemplate(
+                "deactivationPerformed",
+                { mail: user.primaryEmail },
+                subject
+              ).getContent();
+              sendEmail(user.recoveryEmail, subject, "", {
+                htmlBody,
+              });
             }
             deactivatedUsers.push(user.primaryEmail!);
             console.log(
@@ -209,18 +208,24 @@ function notifyForDeactivation(
     return;
   }
 
-  const deactivationNoticeTemplate =
-    HtmlService.createTemplateFromFile("deactivationNotice");
-  deactivationNoticeTemplate.mail = user.primaryEmail;
-  deactivationNoticeTemplate.days = days === 1 ? "1 dzień" : `${days} dni`;
-  deactivationNoticeTemplate.verificationLink = `${PROXY_URL}/confirm-zhr.html?id=${user.primaryEmail}`;
+  const verificationLink = `${PROXY_URL}/confirm-zhr.html?id=${user.primaryEmail}`;
+  const subject = `[WYMAGANA AKCJA] Weryfikacja konta ${user.primaryEmail}`;
+  const htmlBody = renderTemplate(
+    "deactivationNotice",
+    {
+      mail: user.primaryEmail,
+      days: days === 1 ? "1 dzień" : `${days} dni`,
+      verificationLink,
+    },
+    subject
+  ).getContent();
 
   sendEmail(
     [user.primaryEmail, user.recoveryEmail].join(","),
-    `[WYMAGANA AKCJA] Weryfikacja konta ${user.primaryEmail}`,
+    subject,
     "",
     {
-      htmlBody: deactivationNoticeTemplate.evaluate().getContent(),
+      htmlBody,
     }
   );
 }

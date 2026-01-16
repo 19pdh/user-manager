@@ -7,7 +7,7 @@ import {
   getRow,
 } from "../lib/sheet";
 import { getGoogleUser, deleteUser } from "../lib/user";
-import { sendEmail } from "../lib/utils";
+import { sendEmail, renderTemplate } from "../lib/utils";
 
 /**
  * @param {Date} date1 The date
@@ -57,17 +57,16 @@ function cleanupPendingRequests(): void {
           `[cleanupPendingRequests] Rejecting request for ${primaryEmail}`
         );
 
-        const template = HtmlService.createTemplateFromFile("requestRefused");
-        template.mail = primaryEmail;
-        template.surveyLink = SURVEY_LINK;
-
         if (recoveryEmail) {
-          sendEmail(
-            recoveryEmail,
-            `Twój wniosek o konto @zhr.pl został odrzucony`,
-            "",
-            { htmlBody: template.evaluate().getContent() }
-          );
+          const subject = `Twój wniosek o konto @zhr.pl został odrzucony`;
+          const htmlBody = renderTemplate(
+            "requestRefused",
+            { mail: primaryEmail, surveyLink: SURVEY_LINK },
+            subject
+          ).getContent();
+          sendEmail(recoveryEmail, subject, "", {
+            htmlBody,
+          });
         }
 
         updateRow(sheet, row, { status: "Odmówiono" });

@@ -1,6 +1,6 @@
 import { getSheet, getRow, updateRow } from "../lib/sheet";
 import { proposeEmail } from "../lib/utils";
-import { sendEmail } from "../lib/utils";
+import { sendEmail, renderTemplate } from "../lib/utils";
 import { PROXY_URL } from "../config";
 
 /**
@@ -38,12 +38,13 @@ function notifySuperior(
   mail: string
 ) {
   const verificationLink = `${PROXY_URL}/confirm-zhr.html?id=${mail}`;
-  const template = HtmlService.createTemplateFromFile("superior");
-  template.mail = mail;
-  template.verificationLink = verificationLink;
-  template.name = name;
-  template.surname = surname;
-  sendEmail(superiorEmail, `Założenia konta ${mail}`, "", {
-    htmlBody: template.evaluate().getContent(),
+  const subject = `Założenia konta ${mail}`;
+  const htmlBody = renderTemplate(
+    "superior",
+    { mail, verificationLink, name, surname },
+    subject
+  ).getContent();
+  sendEmail(superiorEmail, subject, "", {
+    htmlBody,
   });
 }
