@@ -65,9 +65,9 @@ export function renderTemplate(
   Object.assign(contentTemplate, data);
   const content = contentTemplate.evaluate().getContent();
 
-  const masterTemplate = HtmlService.createTemplateFromFile("layout");
-  masterTemplate.title = title;
-  masterTemplate.content = content;
+  const layoutTemplate = HtmlService.createTemplateFromFile("layout");
+  layoutTemplate.title = title;
+  layoutTemplate.content = content;
 
-  return masterTemplate.evaluate();
+  return layoutTemplate.evaluate();
 }
