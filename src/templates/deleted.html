@@ -1,85 +1,27 @@
-<!DOCTYPE html>
-<html lang="pl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>⚜️ Twój mail @zhr.pl został usunięty</title>
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: "Roboto Slab", sans-serif;
-        background-color: #fff; /* --bg-primary */
-        color: #000; /* --primary */
-      }
-      .container {
-        max-width: 600px;
-        margin: auto;
-        background: white;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
-        overflow: hidden;
-      }
-      .header {
-        background-color: #507b34; /* --bg-secondary */
-        color: #fff; /* --secondary */
-        padding: 20px;
-        text-align: center;
-      }
-      .content {
-        padding: 20px;
-        text-align: center;
-      }
-      .button {
-        display: inline-block;
-        padding: 10px 20px;
-        font-size: 16px;
-        color: #fff;
-        background-color: #507b34; /* --bg-secondary */
-        text-decoration: none;
-        border-radius: 5px;
-        margin: 15px;
-      }
-      .footer {
-        text-align: center;
-        font-size: 12px;
-        color: #888;
-        padding: 10px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <h1>
-          Twoje konto
-          <a href="mailto:<?= mail ?>" style="color: #fff"><?= mail ?></a>
-          zostało usunięte
-        </h1>
-      </div>
-      <div class="content">
-        <h2>Czuwaj!</h2>
-        <p>
-          Twoje konto w domenie zhr.pl nie zostało aktywowane (nie
-          zalogowałaś/eś się), dlatego ze względów bezpieczeństwa zostało
-          usunięte.
-        </p>
-        <p></p>
-        <p>
-          Czas szybko minął? Nic straconego, jeżeli nadal potrzebujesz maila
-          ZHR, możesz po prostu ponownie wypełnić ankietę z prośbą o założenie:
-        </p>
-        <a href="<?= surveyLink ?>" class="button" style="color: #fff"
-          >Założenie skrzynki mailowej @zhr</a
-        >
-        <hr />
-        <p>
-          Jeżeli uważasz, że nastąpiła pomyłka, napisz do nas w odpowiedzi na
-          tego maila.
-        </p>
-      </div>
-      <div class="footer">
-        <p>Zespół IT ZHR Okręg Wielkopolski</p>
-      </div>
-    </div>
-  </body>
-</html>
+<div class="header">
+  <h1>
+    Twoje konto
+    <a href="mailto:<?= mail ?>"><?= mail ?></a>
+    zostało usunięte
+  </h1>
+</div>
+<div class="content">
+  <h2>Czuwaj!</h2>
+  <p>
+    Twoje konto w domenie zhr.pl nie zostało aktywowane (nie zalogowałaś/eś
+    się), dlatego ze względów bezpieczeństwa zostało usunięte.
+  </p>
+  <p></p>
+  <p>
+    Czas szybko minął? Nic straconego, jeżeli nadal potrzebujesz maila ZHR,
+    możesz po prostu ponownie wypełnić ankietę z prośbą o założenie:
+  </p>
+  <a href="<?= surveyLink ?>" class="button"
+    >Założenie skrzynki mailowej @zhr</a
+  >
+  <hr />
+  <p>
+    Jeżeli uważasz, że nastąpiła pomyłka, napisz do nas w odpowiedzi na tego
+    maila.
+  </p>
+</div>

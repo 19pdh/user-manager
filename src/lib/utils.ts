@@ -55,3 +55,19 @@ export function parseFormUrlEncoded(encodedString: string) {
 
   return result;
 }
+
+export function renderTemplate(
+  templateName: string,
+  data: any,
+  title: string
+): GoogleAppsScript.HTML.HtmlOutput {
+  const contentTemplate = HtmlService.createTemplateFromFile(templateName);
+  Object.assign(contentTemplate, data);
+  const content = contentTemplate.evaluate().getContent();
+
+  const layoutTemplate = HtmlService.createTemplateFromFile("layout");
+  layoutTemplate.title = title;
+  layoutTemplate.content = content;
+
+  return layoutTemplate.evaluate();
+}

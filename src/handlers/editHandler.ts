@@ -1,6 +1,6 @@
 import { getSheet, updateRow, getRow } from "../lib/sheet";
 import { createUser, generatePassword } from "../lib/user";
-import { sendEmail } from "../lib/utils";
+import { sendEmail, renderTemplate } from "../lib/utils";
 import {
   MANAGER_MAIL,
   NONLEADERS_GROUP,
@@ -68,13 +68,13 @@ export function onEdit({
     userToCreate.superior
   );
   updateRow(sheet, row, { timestamp: new Date(), exists: true });
-  const template = HtmlService.createTemplateFromFile("created");
-  template.mail = userToCreate.primaryEmail;
-  template.password = password;
-  sendEmail(
-    userToCreate.recoveryEmail,
-    "⚜️ Twój mail @zhr.pl jest już gotowy!",
-    "",
-    { htmlBody: template.evaluate().getContent() }
-  );
+  const subject = "⚜️ Twój mail @zhr.pl jest już gotowy!";
+  const htmlBody = renderTemplate(
+    "created",
+    { mail: userToCreate.primaryEmail, password: password },
+    subject
+  ).getContent();
+  sendEmail(userToCreate.recoveryEmail, subject, "", {
+    htmlBody,
+  });
 }

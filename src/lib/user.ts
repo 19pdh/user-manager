@@ -1,6 +1,6 @@
 import { SURVEY_LINK, LEADERS_GROUP } from "../config";
 import { getSheet, labelToColumnLetter, getRow, updateRow } from "./sheet";
-import { sendEmail } from "./utils";
+import { sendEmail, renderTemplate } from "./utils";
 
 export function getUser(mail: string): { [key: string]: any } {
   const sheet = getSheet();
@@ -32,16 +32,17 @@ export function deleteUser(mail: string) {
   } else {
     throw new Error("AdminDirectory.Users is undefined");
   }
-  const template = HtmlService.createTemplateFromFile("deleted");
-  template.mail = mail;
-  template.surveyLink = SURVEY_LINK;
+
   if (googleUser.recoveryEmail) {
-    sendEmail(
-      googleUser.recoveryEmail,
-      `Twoje konto ${mail} zostało usunięte`,
-      "",
-      { htmlBody: template.evaluate().getContent() }
-    );
+    const subject = `Twoje konto ${mail} zostało usunięte`;
+    const htmlBody = renderTemplate(
+      "deleted",
+      { mail, surveyLink: SURVEY_LINK },
+      subject
+    ).getContent();
+    sendEmail(googleUser.recoveryEmail, subject, "", {
+      htmlBody,
+    });
   }
   updateRow(sheet, user.rowNumber, {
     status: "Usunięto",
