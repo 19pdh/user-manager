@@ -1,16 +1,16 @@
-      <div class="header">
-        <h1>⚠️ Coś poszło nie tak</h1>
-      </div>
-      <div class="content">
-        <p>Podczas sprawdzania konta wystąpił błąd:</p>
-        <p style="color: red"><?= error ?></p>
-        <? if (isOrgUnitPathError) { ?>
-        <p>
-          To znaczy, że Twój mail nie jest wpisany na listę instruktorów i
-          instruktorek. W takim przypadku możesz przekazać po prostu maila z
-          przyciskiem do potwierdzania hufcowej/hufcowemu 😉.
-        </p>
-        <? } ?>
-        <p>Administrator został powiadomiony o problemie 🫡</p>
-        <p></p>
-      </div>
+<div class="header">
+  <h1>⚠️ Coś poszło nie tak</h1>
+</div>
+<div class="content">
+  <p>Podczas sprawdzania konta wystąpił błąd:</p>
+  <p style="color: red"><?= error ?></p>
+  <? if (isOrgUnitPathError) { ?>
+  <p>
+    To znaczy, że Twój mail nie jest wpisany na listę instruktorów i
+    instruktorek. W takim przypadku możesz przekazać po prostu maila z
+    przyciskiem do potwierdzania hufcowej/hufcowemu 😉.
+  </p>
+  <? } ?>
+  <p>Administrator został powiadomiony o problemie 🫡</p>
+  <p></p>
+</div>

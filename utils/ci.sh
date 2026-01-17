@@ -1,6 +1,6 @@
 #!/bin/sh
 # USAGE:
-# ./utils/ci.sh [VERSION_TAG]
+# ./utils/ci.sh [SCRIPT_ID] [VERSION_TAG]
 #
 # CI/CD script that pushes code and updates deployments for 
 # the current project. Assumes that clasp is configured.
