@@ -20,7 +20,8 @@ export function groupUpdateHandler() {
 
     const mailList = selection.getValues()
         .flat()
-        .filter(mail => mail.trim() !== '')
+        .map(mail => String(mail).trim().toLowerCase())
+        .filter(mail => mail !== '')
         .filter(mail => {
             // Basic email validation regex
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
