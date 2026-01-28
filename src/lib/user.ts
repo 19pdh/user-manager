@@ -114,7 +114,7 @@ export function createUser(
     orgUnitPath,
     changePasswordAtNextLogin: true,
     password,
-    mails: [
+    emails: [
       {
         type: "work",
         address: recoveryEmail,

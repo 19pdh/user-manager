@@ -65,7 +65,7 @@ export function onEdit({
     userToCreate.recoveryPhone,
     orgUnitPath,
     password,
-    userToCreate.superior
+    userToCreate.superiorEmail
   );
   updateRow(sheet, row, { timestamp: new Date(), exists: true });
   const subject = "⚜️ Twój mail @zhr.pl jest już gotowy!";
