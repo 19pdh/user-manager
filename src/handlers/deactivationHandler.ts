@@ -151,7 +151,6 @@ export function scheduleForDeactivation(): void {
 
   let page: GoogleAppsScript.AdminDirectory.Schema.Users;
   let pageToken: string | undefined;
-  const scheduledUsers: string[] = [];
   const failedUsers: string[] = [];
   const notifiedUsers: { email: string; deadline: string }[] = [];
 
@@ -206,7 +205,6 @@ export function scheduleForDeactivation(): void {
           scheduleUserForDeactivation(user, deadline);
           notifyForDeactivation(user, deadline);
           Utilities.sleep(2000); // Wait 2s to avoid hitting rate limits
-          scheduledUsers.push(user.primaryEmail);
           notifiedUsers.push({
             email: user.primaryEmail,
             deadline: deadline.toISOString(),
@@ -233,13 +231,8 @@ export function scheduleForDeactivation(): void {
   }
 
   let summary = "";
-  if (scheduledUsers.length) {
-    summary += `scheduleForDeactivation: użytkownicy zaplanowani do dezaktywacji (${
-      scheduledUsers.length
-    })\n${scheduledUsers.join("\n")}\n\n`;
-  }
   if (notifiedUsers.length) {
-    summary += `Wysłano powiadomienia (${notifiedUsers.length}):\n`;
+    summary += `Zaplanowano do dezaktywacji i wysłano powiadomienia (${notifiedUsers.length}):\n`;
     summary += notifiedUsers
       .map((u) => `- ${u.email} (Zaplanowano na: ${u.deadline})`)
       .join("\n");
