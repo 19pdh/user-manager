@@ -1,8 +1,13 @@
 import { getSheet, updateRow } from "../lib/sheet";
 import { getUser, getGoogleUser, getGoogleUserSafe } from "../lib/user";
-import { parseFormUrlEncoded, sendEmail, renderTemplate } from "../lib/utils";
+import {
+  parseFormUrlEncoded,
+  sendEmail,
+  renderTemplate,
+  errorHandler,
+} from "../lib/utils";
 import { verifyToken } from "../lib/auth";
-import { ADMIN_MAIL, MANAGER_MAIL, LEADERS_GROUP } from "../config";
+import { ADMIN_MAIL, LEADERS_GROUP } from "../config";
 
 class OrgUnitPathError extends Error {
   constructor(userEmail: string, orgUnitPath: string) {
@@ -163,21 +168,5 @@ function htmlErrorHandler(
     "superiorError",
     { error: err.message, isOrgUnitPathError },
     title
-  );
-}
-
-function errorHandler(err: Error, func = "unknown", context = undefined) {
-  console.error(`[errorHandler] Error in function '${func}': ${err}`);
-  const msg = `Error message:
-  
-  ${err.stack}
-  
-  Additional data:
-  
-  ${JSON.stringify(context)}`;
-  sendEmail(
-    `${MANAGER_MAIL}, ${ADMIN_MAIL}`,
-    `Error in function '${func}'`,
-    msg
   );
 }

@@ -1,4 +1,4 @@
-import { sendEmail, renderTemplate } from "../lib/utils";
+import { sendEmail, renderTemplate, errorHandler } from "../lib/utils";
 import { ADMIN_MAIL, NONLEADERS_GROUP, PROXY_URL } from "../config";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -16,6 +16,8 @@ export function oldCleanup(): void {
   let pageToken: string | undefined;
   const deactivatedUsers: string[] = [];
   const failedUsers: string[] = [];
+  const notifiedUsers: { email: string; deadline: string; daysLeft: number }[] =
+    [];
 
   do {
     // Get users from NONLEADERS_GROUP
@@ -44,6 +46,11 @@ export function oldCleanup(): void {
           // Notify if 14, 7 or 1 days are left
           if (daysLeft === 14 || daysLeft === 7 || daysLeft === 1) {
             notifyForDeactivation(user, deadline);
+            notifiedUsers.push({
+              email: user.primaryEmail!,
+              deadline: deadline.toISOString(),
+              daysLeft,
+            });
             Utilities.sleep(2000); // Wait 2s to avoid hitting rate limits
           }
 
@@ -88,20 +95,32 @@ export function oldCleanup(): void {
     pageToken = page.nextPageToken;
   } while (pageToken);
 
-  let summary = "";
   if (failedUsers.length) {
-    summary += `Błędy podczas przetwarzania:\n${failedUsers.join("\n")}\n\n`;
+    const errorSummary = `Błędy podczas przetwarzania oldCleanup:\n\n${failedUsers.join(
+      "\n"
+    )}`;
+    errorHandler(errorSummary, "oldCleanup", { count: failedUsers.length });
   }
+
+  let summary = "";
   if (deactivatedUsers.length) {
-    summary += `Dezaktywowano użytkowników:\n${deactivatedUsers.join("\n")}\n\n`;
+    summary += `Dezaktywowano użytkowników (${
+      deactivatedUsers.length
+    }):\n${deactivatedUsers.join("\n")}\n\n`;
+  }
+  if (notifiedUsers.length) {
+    summary += `Wysłano powiadomienia (${notifiedUsers.length}):\n`;
+    summary += notifiedUsers
+      .map(
+        (u) =>
+          `- ${u.email} (Dezaktywacja: ${u.deadline}, Pozostało dni: ${u.daysLeft})`
+      )
+      .join("\n");
+    summary += "\n\n";
   }
 
   if (summary) {
-    sendEmail(
-      ADMIN_MAIL,
-      "oldCleanup: raport z wykonania",
-      summary
-    );
+    sendEmail(ADMIN_MAIL, "oldCleanup: raport z wykonania", summary);
   }
   console.info("[oldCleanup] Finished deactivation cleanup job");
 }
@@ -134,6 +153,7 @@ export function scheduleForDeactivation(): void {
   let pageToken: string | undefined;
   const scheduledUsers: string[] = [];
   const failedUsers: string[] = [];
+  const notifiedUsers: { email: string; deadline: string }[] = [];
 
   do {
     // Get users from NONLEADERS_GROUP
@@ -187,6 +207,10 @@ export function scheduleForDeactivation(): void {
           notifyForDeactivation(user, deadline);
           Utilities.sleep(2000); // Wait 2s to avoid hitting rate limits
           scheduledUsers.push(user.primaryEmail);
+          notifiedUsers.push({
+            email: user.primaryEmail,
+            deadline: deadline.toISOString(),
+          });
         }
       } catch (e) {
         console.error(
@@ -199,14 +223,27 @@ export function scheduleForDeactivation(): void {
     pageToken = page.nextPageToken;
   } while (pageToken);
 
-  let summary = "";
   if (failedUsers.length) {
-    summary += `Błędy podczas przetwarzania:\n${failedUsers.join("\n")}\n\n`;
+    const errorSummary = `Błędy podczas przetwarzania scheduleForDeactivation:\n\n${failedUsers.join(
+      "\n"
+    )}`;
+    errorHandler(errorSummary, "scheduleForDeactivation", {
+      count: failedUsers.length,
+    });
   }
+
+  let summary = "";
   if (scheduledUsers.length) {
     summary += `scheduleForDeactivation: użytkownicy zaplanowani do dezaktywacji (${
       scheduledUsers.length
     })\n${scheduledUsers.join("\n")}\n\n`;
+  }
+  if (notifiedUsers.length) {
+    summary += `Wysłano powiadomienia (${notifiedUsers.length}):\n`;
+    summary += notifiedUsers
+      .map((u) => `- ${u.email} (Zaplanowano na: ${u.deadline})`)
+      .join("\n");
+    summary += "\n\n";
   }
 
   if (summary) {
