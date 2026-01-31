@@ -1,4 +1,4 @@
-import { ADMIN_MAIL, ADMIN_NAME } from "../config";
+import { ADMIN_MAIL, ADMIN_NAME, MANAGER_MAIL } from "../config";
 
 function sanitize(string: string) {
   return (
@@ -70,4 +70,24 @@ export function renderTemplate(
   layoutTemplate.content = content;
 
   return layoutTemplate.evaluate();
+}
+
+export function errorHandler(
+  err: Error | string,
+  func = "unknown",
+  context: any = undefined
+) {
+  console.error(`[errorHandler] Error in function '${func}': ${err}`);
+  const msg = `Error message:
+
+  ${err instanceof Error ? err.stack : err}
+
+  Additional data:
+
+  ${JSON.stringify(context)}`;
+  sendEmail(
+    `${MANAGER_MAIL}, ${ADMIN_MAIL}`,
+    `Error in function '${func}'`,
+    msg
+  );
 }
