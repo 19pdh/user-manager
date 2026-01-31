@@ -89,11 +89,11 @@ export function oldCleanup(): void {
   } while (pageToken);
 
   let summary = "";
+  if (failedUsers.length) {
+    summary += `Błędy podczas przetwarzania:\n${failedUsers.join("\n")}\n\n`;
+  }
   if (deactivatedUsers.length) {
     summary += `Dezaktywowano użytkowników:\n${deactivatedUsers.join("\n")}\n\n`;
-  }
-  if (failedUsers.length) {
-    summary += `Błędy podczas przetwarzania:\n${failedUsers.join("\n")}`;
   }
 
   if (summary) {
@@ -200,13 +200,13 @@ export function scheduleForDeactivation(): void {
   } while (pageToken);
 
   let summary = "";
+  if (failedUsers.length) {
+    summary += `Błędy podczas przetwarzania:\n${failedUsers.join("\n")}\n\n`;
+  }
   if (scheduledUsers.length) {
     summary += `scheduleForDeactivation: użytkownicy zaplanowani do dezaktywacji (${
       scheduledUsers.length
     })\n${scheduledUsers.join("\n")}\n\n`;
-  }
-  if (failedUsers.length) {
-    summary += `Błędy podczas przetwarzania:\n${failedUsers.join("\n")}`;
   }
 
   if (summary) {
