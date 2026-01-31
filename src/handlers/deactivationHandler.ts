@@ -15,6 +15,7 @@ export function oldCleanup(): void {
   let page: GoogleAppsScript.AdminDirectory.Schema.Users;
   let pageToken: string | undefined;
   const deactivatedUsers: string[] = [];
+  const failedUsers: string[] = [];
 
   do {
     // Get users from NONLEADERS_GROUP
@@ -29,23 +30,24 @@ export function oldCleanup(): void {
     const users = page.users || [];
 
     for (let user of users) {
-      const deadlineString = getRelation(
-        user.relations,
-        "scheduled_for_deactivation"
-      );
+      try {
+        const deadlineString = getRelation(
+          user.relations,
+          "scheduled_for_deactivation"
+        );
 
-      if (deadlineString) {
-        const deadline = new Date(deadlineString);
-        const timeDiff = deadline.getTime() - new Date().getTime();
-        const daysLeft = Math.ceil(timeDiff / MS_PER_DAY);
+        if (deadlineString) {
+          const deadline = new Date(deadlineString);
+          const timeDiff = deadline.getTime() - new Date().getTime();
+          const daysLeft = Math.ceil(timeDiff / MS_PER_DAY);
 
-        // Notify if 14, 7 or 1 days are left
-        if (daysLeft === 14 || daysLeft === 7 || daysLeft === 1) {
-          notifyForDeactivation(user, deadline);
-        }
+          // Notify if 14, 7 or 1 days are left
+          if (daysLeft === 14 || daysLeft === 7 || daysLeft === 1) {
+            notifyForDeactivation(user, deadline);
+            Utilities.sleep(2000); // Wait 2s to avoid hitting rate limits
+          }
 
-        if (timeDiff <= 0) {
-          try {
+          if (timeDiff <= 0) {
             // Suspend and remove scheduled_for_deactivation relation
             const currentRelations = user.relations || [];
             const updatedRelations = currentRelations.filter(
@@ -66,27 +68,39 @@ export function oldCleanup(): void {
               sendEmail(user.recoveryEmail, subject, "", {
                 htmlBody,
               });
+              Utilities.sleep(2000); // Wait 2s to avoid hitting rate limits
             }
             deactivatedUsers.push(user.primaryEmail!);
             console.log(
               `[oldCleanup] User ${user.primaryEmail} has been suspended.`
             );
-          } catch (e) {
-            console.error(
-              `[oldCleanup] Failed to suspend ${user.primaryEmail}: ${e}`
-            );
           }
+        }
+      } catch (e) {
+        console.error(
+          `[oldCleanup] Failed to process user ${user.primaryEmail}: ${e}`
+        );
+        if (user.primaryEmail) {
+          failedUsers.push(`${user.primaryEmail} (${e})`);
         }
       }
     }
     pageToken = page.nextPageToken;
   } while (pageToken);
 
+  let summary = "";
   if (deactivatedUsers.length) {
+    summary += `Dezaktywowano użytkowników:\n${deactivatedUsers.join("\n")}\n\n`;
+  }
+  if (failedUsers.length) {
+    summary += `Błędy podczas przetwarzania:\n${failedUsers.join("\n")}`;
+  }
+
+  if (summary) {
     sendEmail(
       ADMIN_MAIL,
-      "oldCleanup: deaktywacje wykonane",
-      deactivatedUsers.join(" \n")
+      "oldCleanup: raport z wykonania",
+      summary
     );
   }
   console.info("[oldCleanup] Finished deactivation cleanup job");
@@ -119,6 +133,7 @@ export function scheduleForDeactivation(): void {
   let page: GoogleAppsScript.AdminDirectory.Schema.Users;
   let pageToken: string | undefined;
   const scheduledUsers: string[] = [];
+  const failedUsers: string[] = [];
 
   do {
     // Get users from NONLEADERS_GROUP
@@ -158,29 +173,47 @@ export function scheduleForDeactivation(): void {
         continue;
       }
 
-      // Check if account was already scheduled for deactivation
-      const warningRelation = getRelation(
-        user.relations,
-        "scheduled_for_deactivation"
-      );
+      try {
+        // Check if account was already scheduled for deactivation
+        const warningRelation = getRelation(
+          user.relations,
+          "scheduled_for_deactivation"
+        );
 
-      // Schedule only if account wasn't already scheduled for deactivation
-      if (!warningRelation) {
-        const deadline = new Date(now.getTime() + DEACTIVATION_OFFSET_MS);
-        scheduleUserForDeactivation(user, deadline);
-        notifyForDeactivation(user, deadline);
-        scheduledUsers.push(user.primaryEmail);
+        // Schedule only if account wasn't already scheduled for deactivation
+        if (!warningRelation) {
+          const deadline = new Date(now.getTime() + DEACTIVATION_OFFSET_MS);
+          scheduleUserForDeactivation(user, deadline);
+          notifyForDeactivation(user, deadline);
+          Utilities.sleep(2000); // Wait 2s to avoid hitting rate limits
+          scheduledUsers.push(user.primaryEmail);
+        }
+      } catch (e) {
+        console.error(
+          `[scheduleForDeactivation] Failed to process user ${user.primaryEmail}: ${e}`
+        );
+        failedUsers.push(`${user.primaryEmail} (${e})`);
       }
     }
 
     pageToken = page.nextPageToken;
   } while (pageToken);
 
+  let summary = "";
   if (scheduledUsers.length) {
+    summary += `scheduleForDeactivation: użytkownicy zaplanowani do dezaktywacji (${
+      scheduledUsers.length
+    })\n${scheduledUsers.join("\n")}\n\n`;
+  }
+  if (failedUsers.length) {
+    summary += `Błędy podczas przetwarzania:\n${failedUsers.join("\n")}`;
+  }
+
+  if (summary) {
     sendEmail(
       ADMIN_MAIL,
-      `scheduleForDeactivation: użytkownicy zaplanowani do dezaktywacji (${scheduledUsers.length})`,
-      scheduledUsers.join(" \n")
+      `scheduleForDeactivation: raport wykonania`,
+      summary
     );
   }
   console.info("[scheduleForDeactivation] Finished scheduling job");
