@@ -1,6 +1,6 @@
 import { ADMIN_MAIL, ADMIN_NAME, MANAGER_MAIL } from "../config";
 
-function sanitize(string: string) {
+export function sanitize(string: string) {
   return (
     string
       .replace(/[Łł]/g, "l") // NFD normalization cannot handle Ł
