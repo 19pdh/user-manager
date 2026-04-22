@@ -1,7 +1,7 @@
 import { getSheet, getRow, updateRow } from "../lib/sheet";
 import { proposeEmail } from "../lib/utils";
 import { sendEmail, renderTemplate } from "../lib/utils";
-import { PROXY_URL } from "../config";
+import { PROXY_URL, SURVEY_LINK } from "../config";
 import { userExists } from "../lib/user";
 
 /**
@@ -31,7 +31,7 @@ export function onFormSubmit(e: GoogleAppsScript.Events.SheetsOnFormSubmit) {
     const subject = `Wybrany adres ${primaryEmail} jest już zajęty`;
     const htmlBody = renderTemplate(
       "emailTaken",
-      { mail: primaryEmail },
+      { mail: primaryEmail, surveyLink: SURVEY_LINK },
       subject
     ).getContent();
     sendEmail(recoveryEmail, subject, "", {
