@@ -53,108 +53,72 @@ You need to set up the following secrets in your GitHub repository settings:
 
 ### 1. User Creation
 
-This sequence diagram illustrates the workflow of creating a new user account. It involves the applicant filling out a Google Form, the system notifying the requested superior, the superior verifying the request, and finally, the administrator approving it manually in Google Sheets.
+This sequence diagram illustrates the workflow of creating a new user account from a business perspective.
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Applicant
-    participant System as System (GAS)
     actor Superior
-    participant Sheet as Google Sheets
     actor Admin
-    participant Workspace as Google Workspace
 
-    Applicant->>System: Submits Google Form
-    System->>Sheet: Saves initial request (Status: "Oczekiwanie na opiekuna")
-    System->>Superior: Sends email with verification link
-    Superior->>System: Clicks link & authenticates to confirm user
-    System->>Sheet: Updates request (Status: "Oczekiwanie na admina")
-    System->>Admin: Sends email notification about superior's approval
-    Admin->>Sheet: Manually reviews and changes status to "Zatwierdzono"
-    Sheet-->>System: Triggers onEdit event
-    System->>Workspace: Provisions new Google Workspace account
-    System->>Applicant: Sends email with account credentials
+    Applicant->>Admin: Submits registration form
+    Admin->>Superior: Sends email asking to verify the applicant
+    Superior->>Admin: Confirms applicant's identity via email link
+    Admin->>Admin: Reviews the confirmed request
+    Admin->>Applicant: Creates account and sends welcome email with credentials
 ```
 
 ### 2. Applications Cleanup (`freshCleanup`)
 
-This flowchart details the `freshCleanup` process, which is responsible for keeping the system clean of abandoned requests and inactive accounts. It performs two main checks:
-1. Rejects unconfirmed applications residing in Google Sheets that are exactly 7 days old.
-2. Deletes freshly created Google Workspace accounts (7 to 21 days old) that have never been logged into.
+This flowchart details the cleanup process, which ensures the organization is not cluttered with abandoned requests or inactive accounts.
 
 ```mermaid
 flowchart TD
-    Start([Cron Trigger: freshCleanup]) --> CleanSheet[Check Pending Requests in Sheets]
+    Start([Scheduled Cleanup]) --> CheckRequests[Check Unconfirmed Requests]
 
-    subgraph cleanupPendingRequests [Google Sheets Cleanup]
-        CleanSheet --> SheetLoop{For each unconfirmed row}
-        SheetLoop -->|Is exactly 7 days old?| RejectReq[Change status to 'Odmówiono']
-        RejectReq --> NotifyApplicant[Send rejection email to applicant]
-        SheetLoop -->|Not 7 days old| NextRow1[Skip row]
-    end
+    CheckRequests --> RequestLoop{For each request}
+    RequestLoop -->|Exactly 7 days old?| Reject[Reject request]
+    Reject --> EmailApplicant[Send rejection email to Applicant]
+    RequestLoop -->|Other| CheckAccounts[Check Fresh Accounts]
 
-    NotifyApplicant --> FetchAccounts
-    NextRow1 --> FetchAccounts
+    EmailApplicant --> CheckAccounts
 
-    FetchAccounts[Fetch accounts created 7-21 days ago] --> AccountLoop
+    CheckAccounts --> AccountLoop{For each 7-21 days old account}
+    AccountLoop -->|Never logged in?| Delete[Delete account]
+    AccountLoop -->|Logged in| Next[Skip]
 
-    subgraph Fresh Accounts Cleanup [Google Workspace Cleanup]
-        AccountLoop{For each fresh account}
-        AccountLoop -->|Never logged in?| DeleteAcc[Delete from Google Workspace]
-        DeleteAcc --> AddToSummary[Add to summary report]
-        AccountLoop -->|Logged in| NextRow2[Skip account]
-    end
-
-    AddToSummary --> EndCheck
-    NextRow2 --> EndCheck
-
-    EndCheck{Were any accounts deleted?}
-    EndCheck -->|Yes| SendReport[Send summary email to Admin]
-    SendReport --> End([End])
-    EndCheck -->|No| End
+    Delete --> End([End])
+    Next --> End
 ```
 
 ### 3. Cyclic Account Deactivation (`scheduleForDeactivation` & `oldCleanup`)
 
-This sequence diagram explains the periodic cleanup of inactive accounts. Users belonging to `NONLEADERS_GROUP` must revalidate their active status every 2 years.
+This sequence diagram explains the periodic cleanup of inactive accounts. Users must revalidate their active status every 2 years.
 
-**Important distinction:** Unlike new account creation where the superior is known, older accounts might have a new superior. Therefore, the user receives the verification link directly and must forward it to their current superior to confirm their status. The confirmation mechanism (`/confirm-zhr.html`) functions identically to new user creation.
+**Important distinction:** Unlike new account creation where the superior is known, older accounts might have a new superior. Therefore, the Admin sends the verification link to the User, who must forward it to their current Superior to confirm their status.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Cron1 as Cron: scheduleForDeactivation
-    participant Cron2 as Cron: oldCleanup
-    participant Workspace as Google Workspace
+    actor Admin
     actor User
     actor Superior
-    participant System as System (GAS)
 
     %% Scheduling Phase
-    Cron1->>Workspace: Find active users confirmed > 2 years ago
-    loop For each old user
-        Cron1->>Workspace: Set 'scheduled_for_deactivation' (deadline: +30 days)
-        Cron1->>User: Send warning email with verification link
-    end
+    Admin->>User: Sends warning: "Account requires reconfirmation" (30 days deadline)
 
     %% Reconfirmation Phase (User Action)
-    User->>Superior: Forwards verification link
-    Superior->>System: Clicks link & authenticates to reconfirm user
-    System->>Workspace: Removes 'scheduled_for_deactivation' tag
-    System->>Workspace: Updates 'confirmation_date' to now
-    System->>User: Sends "Account Reconfirmed" success email
+    User->>Superior: Forwards the verification link to current Superior
+    Superior->>Admin: Clicks link & confirms User's active status
+    Admin->>User: Sends success email: "Account Reconfirmed"
 
-    %% Periodic Cleanup Phase
-    note over Cron2, Workspace: Runs periodically to check deadlines
-    Cron2->>Workspace: Find users with 'scheduled_for_deactivation' tag
-    loop For each scheduled user
+    %% Periodic Cleanup Phase (If not reconfirmed)
+    loop Every few days
         alt 14, 7, or 1 days left
-            Cron2->>User: Send reminder email
+            Admin->>User: Sends reminder email
         else Deadline passed
-            Cron2->>Workspace: Suspend user account
-            Cron2->>Workspace: Remove 'scheduled_for_deactivation' tag
-            Cron2->>User: Send account suspension email
+            Admin->>User: Suspends account and sends suspension email
         end
     end
 ```
