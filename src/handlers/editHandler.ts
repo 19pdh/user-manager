@@ -7,17 +7,14 @@ import {
   UNIT_GROUP,
   ADMIN_MAIL,
 } from "../config";
+import { notifySuperior } from "./formHandler";
 
 export function onEdit({
   user,
   value,
   range,
 }: GoogleAppsScript.Events.SheetsOnEdit) {
-  if (value != "Zatwierdzono") {
-    return;
-  }
-
-  console.info("[onEdit] Processing edit event 'Zatwierdzono'");
+  console.info(`[onEdit] Processing edit event, value: ${value}`);
 
   const column = range.getColumn();
   const row = range.getRow();
@@ -29,6 +26,33 @@ export function onEdit({
   if (email != MANAGER_MAIL && email != ADMIN_MAIL) {
     return;
   }
+
+  if (value === "Oczekiwanie na opiekuna") {
+    const sheet = getSheet();
+    const data = getRow(sheet, row);
+    if (data.troupName) {
+      notifySuperior(
+        data.superiorEmail,
+        data.troupName,
+        "",
+        data.primaryEmail
+      );
+    } else {
+      notifySuperior(
+        data.superiorEmail,
+        data.name,
+        data.surname,
+        data.primaryEmail
+      );
+    }
+    return;
+  }
+
+  if (value != "Zatwierdzono") {
+    return;
+  }
+
+  console.info("[onEdit] Processing edit event 'Zatwierdzono'");
 
   const sheet = getSheet();
   const userToCreate = getRow(sheet, row);

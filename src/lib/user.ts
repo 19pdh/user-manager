@@ -74,17 +74,30 @@ export function getGoogleUserSafe(
   }
 }
 
-function userExists(mail: string) {
+export function userExists(mail: string) {
+  if (!AdminDirectory) {
+    throw new Error("AdminDirectory is undefined");
+  }
+
   try {
-    if (AdminDirectory && AdminDirectory.Users) {
+    if (AdminDirectory.Users) {
       AdminDirectory.Users.get(mail);
-    } else {
-      throw new Error("AdminDirectory.Users is undefined");
+      return true;
     }
   } catch (err) {
-    return false;
+    // User not found, continue to check groups
   }
-  return true;
+
+  try {
+    if (AdminDirectory.Groups) {
+      AdminDirectory.Groups.get(mail);
+      return true;
+    }
+  } catch (err) {
+    // Group not found
+  }
+
+  return false;
 }
 
 export function createUser(
